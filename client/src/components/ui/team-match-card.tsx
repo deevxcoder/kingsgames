@@ -13,15 +13,15 @@ interface TeamMatchCardProps {
   id: number;
   teamA: string;
   teamB: string;
-  matchDate: string;
+  matchDate: string | Date;
   openTime: string;
   closeTime: string;
   isOpen: boolean;
   result: string | null;
-  oddsTeamA: string;
-  oddsTeamB: string;
-  category: string;
-  image?: string;
+  oddsTeamA: string | number;
+  oddsTeamB: string | number;
+  category?: string;
+  image?: string | null;
   isSelected?: boolean;
   onClick?: () => void;
   linkToDetails?: boolean;
@@ -128,7 +128,7 @@ export function TeamMatchCard({
               <div className="text-center flex-1">
                 <span className="text-xs text-gray-400">Team A</span>
                 <div className="font-medium">{teamA}</div>
-                <div className="text-sm text-[#3EA6FF]">Odds: {parseFloat(oddsTeamA).toFixed(2)}x</div>
+                <div className="text-sm text-[#3EA6FF]">Odds: {parseFloat(String(oddsTeamA)).toFixed(2)}x</div>
               </div>
               
               <div className="mx-2 text-gray-400">vs</div>
@@ -136,7 +136,7 @@ export function TeamMatchCard({
               <div className="text-center flex-1">
                 <span className="text-xs text-gray-400">Team B</span>
                 <div className="font-medium">{teamB}</div>
-                <div className="text-sm text-[#3EA6FF]">Odds: {parseFloat(oddsTeamB).toFixed(2)}x</div>
+                <div className="text-sm text-[#3EA6FF]">Odds: {parseFloat(String(oddsTeamB)).toFixed(2)}x</div>
               </div>
             </div>
           </div>
