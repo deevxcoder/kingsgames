@@ -267,7 +267,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/markets/:id/game-types", async (req, res) => {
     const marketId = parseInt(req.params.id);
+    console.log("Fetching game types for marketId:", marketId);
+    
+    // Log the contents of the game types map for debugging
+    console.log("All game types:", Array.from((storage as any).gameTypesMap.values()));
+    
     const gameTypes = await storage.getGameTypes(marketId);
+    console.log("Filtered game types:", gameTypes);
+    
     return res.json(gameTypes);
   });
 
