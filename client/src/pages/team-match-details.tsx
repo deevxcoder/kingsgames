@@ -16,6 +16,11 @@ import { Calendar, Clock, Trophy, ArrowRightCircle } from "lucide-react";
 import Layout from "@/components/Layout";
 import { TeamMatch } from "@shared/schema";
 
+// Helper function to convert null to undefined for type compatibility
+const nullToUndefined = <T,>(value: T | null): T | undefined => {
+  return value === null ? undefined : value;
+};
+
 export default function TeamMatchDetails() {
   const { id: matchId } = useParams();
   const { user } = useAuth();
@@ -27,7 +32,7 @@ export default function TeamMatchDetails() {
   // Fetch team match
   const { data: match, isLoading } = useQuery<TeamMatch>({
     queryKey: [`/api/team-matches/${matchId}`],
-    enabled: !!matchId && !!user
+    enabled: !!matchId
   });
   
   // Mutation for placing a bet
@@ -129,8 +134,8 @@ export default function TeamMatchDetails() {
                 result={match.result}
                 oddsTeamA={match.oddsTeamA}
                 oddsTeamB={match.oddsTeamB}
-                category={match.category}
-                image={match.image}
+                category={nullToUndefined(match.category)}
+                image={nullToUndefined(match.image)}
               />
             </div>
             
