@@ -299,7 +299,7 @@ export default function Sattamatka() {
             {marketsQuery.isLoading ? (
               <div className="text-center py-8">Loading markets...</div>
             ) : marketsQuery.data && marketsQuery.data.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {marketsQuery.data.map((market) => (
                   <MarketCard
                     key={market.id}
