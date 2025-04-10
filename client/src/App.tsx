@@ -12,7 +12,13 @@ import TeamMatches from "@/pages/team-matches";
 import TeamMatchDetails from "@/pages/team-match-details";
 import Wallet from "@/pages/wallet";
 import BetHistory from "@/pages/bet-history";
+
+// Admin pages
 import AdminMarkets from "@/pages/admin/markets";
+import AdminDashboard from "@/pages/admin/dashboard";
+import AdminUsers from "@/pages/admin/users";
+import AdminTransactions from "@/pages/admin/transactions";
+
 import { useAuth } from "./context/auth-context";
 
 function Router() {
@@ -29,7 +35,17 @@ function Router() {
         <Route path="/market/:id" component={MarketDetails} />
         <Route path="/wallet" component={Wallet} />
         <Route path="/bet-history" component={BetHistory} />
-        {user?.isAdmin && <Route path="/admin/markets" component={AdminMarkets} />}
+        
+        {/* Admin Routes */}
+        {user?.isAdmin && (
+          <>
+            <Route path="/admin/dashboard" component={AdminDashboard} />
+            <Route path="/admin/markets" component={AdminMarkets} />
+            <Route path="/admin/users" component={AdminUsers} />
+            <Route path="/admin/transactions" component={AdminTransactions} />
+          </>
+        )}
+        
         <Route component={NotFound} />
       </Switch>
     </Layout>

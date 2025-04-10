@@ -2,9 +2,31 @@ import { useQuery } from "@tanstack/react-query";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+// Define the stats data type
+interface DashboardStats {
+  totalUsers: number;
+  totalBets: number;
+  activeMarkets: number;
+  totalRevenue: number;
+  recentBets: Array<{
+    id: number;
+    username: string;
+    gameType: string;
+    amount: number;
+    status: string;
+  }>;
+  recentTransactions: Array<{
+    id: number;
+    username: string;
+    type: string;
+    amount: number;
+    status: string;
+  }>;
+}
+
 export default function AdminDashboard() {
   // Fetch stats data
-  const { data: stats, isLoading: isLoadingStats } = useQuery({
+  const { data: stats, isLoading: isLoadingStats } = useQuery<DashboardStats>({
     queryKey: ['/api/admin/stats'],
   });
 

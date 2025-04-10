@@ -85,15 +85,15 @@ interface NavItemProps {
 function NavItem({ href, label, icon, isActive }: NavItemProps) {
   return (
     <Link href={href}>
-      <a className={cn(
-        "flex items-center space-x-2 py-2 px-3 rounded-md transition-colors",
+      <div className={cn(
+        "flex items-center space-x-2 py-2 px-3 rounded-md transition-colors cursor-pointer",
         isActive 
           ? "bg-[#3EA6FF]/10 text-[#3EA6FF]" 
           : "hover:bg-[#0A1018] text-gray-200"
       )}>
         <span className="w-5 h-5">{icon}</span>
         <span>{label}</span>
-      </a>
+      </div>
     </Link>
   );
 }
