@@ -376,7 +376,7 @@ export default function MarketDetails() {
         {gameTypesQuery.isLoading ? (
           <div className="text-center py-4">Loading game types...</div>
         ) : gameTypesQuery.data && gameTypesQuery.data.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {gameTypesQuery.data.some(gt => gt.type === "jodi") && (
               <GameTypeBanner
                 type="jodi"
