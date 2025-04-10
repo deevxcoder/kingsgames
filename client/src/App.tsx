@@ -9,6 +9,7 @@ import CoinToss from "@/pages/coin-toss";
 import Sattamatka from "@/pages/sattamatka";
 import MarketDetails from "@/pages/market-details";
 import TeamMatches from "@/pages/team-matches";
+import TeamMatchDetails from "@/pages/team-match-details";
 import Wallet from "@/pages/wallet";
 import BetHistory from "@/pages/bet-history";
 import AdminMarkets from "@/pages/admin/markets";
@@ -24,6 +25,7 @@ function Router() {
         <Route path="/coin-toss" component={CoinToss} />
         <Route path="/sattamatka" component={Sattamatka} />
         <Route path="/team-matches" component={TeamMatches} />
+        <Route path="/team-match/:id" component={TeamMatchDetails} />
         <Route path="/market/:id" component={MarketDetails} />
         <Route path="/wallet" component={Wallet} />
         <Route path="/bet-history" component={BetHistory} />
