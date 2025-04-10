@@ -88,45 +88,45 @@ export class MemStorage implements IStorage {
 
     // Initialize with game types for Mumbai market
     this.createGameType({
-      marketId: mumbai.id,
+      marketId: 1, // Mumbai market ID
       type: "jodi",
       odds: "90",
     });
 
     this.createGameType({
-      marketId: mumbai.id,
+      marketId: 1, // Mumbai market ID
       type: "odd-even",
       odds: "1.8",
     });
 
     this.createGameType({
-      marketId: mumbai.id,
+      marketId: 1, // Mumbai market ID
       type: "hurf",
       odds: "9",
       doubleMatchOdds: "80",
     });
 
     this.createGameType({
-      marketId: mumbai.id,
+      marketId: 1, // Mumbai market ID
       type: "cross",
       odds: "45", // For 2 digits
     });
 
     // Initialize game types for other markets
     this.createGameType({
-      marketId: kalyan.id,
+      marketId: 2, // Kalyan market ID
       type: "jodi",
       odds: "90",
     });
 
     this.createGameType({
-      marketId: kalyan.id,
+      marketId: 2, // Kalyan market ID
       type: "odd-even",
       odds: "1.8",
     });
 
     this.createGameType({
-      marketId: rajdhani.id,
+      marketId: 3, // Rajdhani market ID
       type: "jodi",
       odds: "90",
     });
