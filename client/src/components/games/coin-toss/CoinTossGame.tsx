@@ -139,7 +139,7 @@ const CoinTossGame: React.FC = () => {
         if (data.won) {
           toast({
             title: 'You won!',
-            description: `Congratulations! You won $${data.winAmount.toFixed(2)}`,
+            description: `Congratulations! You won ₹${data.winAmount.toLocaleString('en-IN')}`,
             variant: 'default',
           });
         } else {

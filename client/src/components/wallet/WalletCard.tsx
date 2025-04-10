@@ -150,7 +150,7 @@ const WalletCard: React.FC = () => {
                 Amount to Deposit
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-textSecondary">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-textSecondary">₹</span>
                 <Input
                   id="amount"
                   type="number"
@@ -199,7 +199,7 @@ const WalletCard: React.FC = () => {
                 Amount to Withdraw
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-textSecondary">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-textSecondary">₹</span>
                 <Input
                   id="withdraw-amount"
                   type="number"
