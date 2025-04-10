@@ -309,8 +309,7 @@ export default function Sattamatka() {
                     closeTime={market.closeTime}
                     isOpen={market.isOpen}
                     lastResult={market.lastResult}
-                    isSelected={selectedMarketId === market.id}
-                    onClick={() => setSelectedMarketId(market.id)}
+                    linkToDetails={true}
                   />
                 ))}
               </div>
@@ -321,7 +320,8 @@ export default function Sattamatka() {
             )}
           </div>
           
-          {selectedMarketId && (
+          {/* This section is now handled in the market-details page */}
+          {false && selectedMarketId && (
             <>
               {/* Game Type Tabs */}
               <div className="mb-5 border-b border-gray-500">
