@@ -8,6 +8,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useWallet } from "@/context/wallet-context";
 import { useToast } from "@/hooks/use-toast";
 import { useWebSocket } from "@/hooks/use-websocket";
+import { MarketCard } from "@/components/ui/market-card";
 
 type GameType = "jodi" | "odd-even" | "hurf" | "cross";
 
@@ -293,27 +294,31 @@ export default function Sattamatka() {
         <CardContent className="p-4 md:p-6">
           {/* Market Selection */}
           <div className="mb-6">
-            <label className="block text-gray-300 text-sm mb-2">Select Market</label>
-            <div className="relative">
-              <Select
-                onValueChange={(value) => setSelectedMarketId(parseInt(value))}
-                value={selectedMarketId?.toString()}
-              >
-                <SelectTrigger className="w-full bg-[#0A1018] border-gray-500">
-                  <SelectValue placeholder="Select a market" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#0A1018] border-gray-500">
-                  {marketsQuery.isLoading ? (
-                    <SelectItem value="loading" disabled>Loading markets...</SelectItem>
-                  ) : marketsQuery.data?.map((market) => (
-                    <SelectItem key={market.id} value={market.id.toString()}>
-                      {market.name} (Opens {market.openTime}, Closes {market.closeTime})
-                      {!market.isOpen && " - CLOSED"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <h3 className="text-xl font-bold mb-4">Select Market</h3>
+            
+            {marketsQuery.isLoading ? (
+              <div className="text-center py-8">Loading markets...</div>
+            ) : marketsQuery.data && marketsQuery.data.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {marketsQuery.data.map((market) => (
+                  <MarketCard
+                    key={market.id}
+                    id={market.id}
+                    name={market.name}
+                    openTime={market.openTime}
+                    closeTime={market.closeTime}
+                    isOpen={market.isOpen}
+                    lastResult={market.lastResult}
+                    isSelected={selectedMarketId === market.id}
+                    onClick={() => setSelectedMarketId(market.id)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-400">
+                No markets available at the moment
+              </div>
+            )}
           </div>
           
           {selectedMarketId && (
