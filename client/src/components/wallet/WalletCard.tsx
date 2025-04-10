@@ -22,10 +22,7 @@ const WalletCard: React.FC = () => {
   const [processing, setProcessing] = useState(false);
   
   const formatBalance = (balance: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(balance);
+    return `₹${balance.toLocaleString('en-IN')}`;
   };
   
   const handleDepositSubmit = async () => {

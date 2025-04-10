@@ -279,7 +279,7 @@ const CrossGame: React.FC<CrossGameProps> = ({ marketId, gameTypeId, odds }) => 
           <div>
             <p className="text-textSecondary">Potential Win</p>
             <p className="text-accent text-xl font-medium">
-              ${calculatePotentialWin().toFixed(2)}
+              ₹{calculatePotentialWin().toLocaleString('en-IN')}
             </p>
             <p className="text-xs text-textSecondary">
               Current odds: x{effectiveOdds}
