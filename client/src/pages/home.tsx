@@ -53,22 +53,52 @@ export default function Home() {
   
   return (
     <div>
-      {/* Top Banner */}
-      <div className="relative overflow-hidden rounded-xl mb-6">
-        <div className="w-full h-36 md:h-52 bg-gradient-to-r from-[#1A2C3D] to-[#0A1018] flex items-center justify-center">
-          <svg
-            className="absolute opacity-10"
-            viewBox="0 0 100 100"
-            width="140"
-            height="140"
-          >
-            <circle cx="50" cy="50" r="40" stroke="#3EA6FF" strokeWidth="8" fill="none" />
-            <circle cx="50" cy="50" r="20" stroke="#FF7C48" strokeWidth="8" fill="none" />
-          </svg>
+      {/* Hero Section with Two Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Welcome Card */}
+        <div className="relative overflow-hidden rounded-xl">
+          <div className="w-full h-36 md:h-52 bg-gradient-to-r from-[#1A2C3D] to-[#0A1018] flex items-center justify-center">
+            <svg
+              className="absolute opacity-10"
+              viewBox="0 0 100 100"
+              width="140"
+              height="140"
+            >
+              <circle cx="50" cy="50" r="40" stroke="#3EA6FF" strokeWidth="8" fill="none" />
+              <circle cx="50" cy="50" r="20" stroke="#FF7C48" strokeWidth="8" fill="none" />
+            </svg>
+          </div>
+          <div className="absolute inset-0 flex flex-col justify-center px-6">
+            <h1 className="text-2xl md:text-4xl font-bold mb-2">Welcome to BetX</h1>
+            <p className="text-sm md:text-base text-gray-300">Play, Win, Repeat. Your ultimate gaming experience.</p>
+          </div>
         </div>
-        <div className="absolute inset-0 flex flex-col justify-center px-6">
-          <h1 className="text-2xl md:text-4xl font-bold mb-2">Welcome to BetX</h1>
-          <p className="text-sm md:text-base text-gray-300">Play, Win, Repeat. Your ultimate gaming experience.</p>
+        
+        {/* Promotional Slider Card */}
+        <div className="relative overflow-hidden rounded-xl">
+          <Carousel className="w-full h-36 md:h-52">
+            <CarouselContent>
+              {promotionalBanners.map((banner) => (
+                <CarouselItem key={banner.id}>
+                  <div className={`w-full h-full p-6 bg-gradient-to-r ${banner.bgColor}`}>
+                    <div className="h-full flex flex-col justify-center">
+                      <h3 className="text-xl md:text-2xl font-bold mb-2">{banner.title}</h3>
+                      <p className="text-sm md:text-base mb-4 text-white/90">{banner.description}</p>
+                      <Link href={banner.buttonLink}>
+                        <Button variant="secondary" className="bg-white text-black hover:bg-white/90">
+                          {banner.buttonText}
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <div className="absolute bottom-2 right-2 flex space-x-2">
+              <CarouselPrevious className="h-8 w-8" />
+              <CarouselNext className="h-8 w-8" />
+            </div>
+          </Carousel>
         </div>
       </div>
       

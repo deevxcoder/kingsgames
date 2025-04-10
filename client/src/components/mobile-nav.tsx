@@ -90,7 +90,7 @@ export default function MobileNav() {
                   <div className="flex justify-between items-center">
                     <div>
                       <div className="text-sm text-gray-300">Balance</div>
-                      <div className="font-mono font-bold">${parseFloat(balance).toFixed(2)}</div>
+                      <div className="font-mono font-bold">₹{parseFloat(balance).toLocaleString('en-IN')}</div>
                     </div>
                     <button className="px-3 py-1 rounded bg-[#3EA6FF] text-sm">
                       Deposit
