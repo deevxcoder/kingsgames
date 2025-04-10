@@ -19,17 +19,17 @@ export default function MobileNav() {
       <header className="md:hidden bg-[#1A2C3D] border-b border-gray-500/30 p-4 sticky top-0 z-10">
         <div className="flex justify-between items-center">
           <Link href="/">
-            <a className="text-2xl font-bold text-[#3EA6FF]">BetX</a>
+            <div className="text-2xl font-bold text-[#3EA6FF] cursor-pointer">BetX</div>
           </Link>
           <div className="flex items-center space-x-2">
             <Link href="/wallet">
-              <a className="flex items-center justify-center rounded-full w-10 h-10 bg-[#0A1018]">
+              <div className="flex items-center justify-center rounded-full w-10 h-10 bg-[#0A1018] cursor-pointer">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
                   <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
                   <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
                 </svg>
-              </a>
+              </div>
             </Link>
             <button 
               className="flex items-center justify-center rounded-full w-10 h-10 bg-[#0A1018]"
@@ -66,9 +66,21 @@ export default function MobileNav() {
             </MobileNavLink>
             
             {user?.isAdmin && (
-              <MobileNavLink href="/admin/markets" current={location} onClick={() => setIsMenuOpen(false)}>
-                Manage Markets
-              </MobileNavLink>
+              <>
+                <div className="text-xs text-gray-300 uppercase mt-3 mb-1 px-3">Admin Panel</div>
+                <MobileNavLink href="/admin/dashboard" current={location} onClick={() => setIsMenuOpen(false)}>
+                  Dashboard
+                </MobileNavLink>
+                <MobileNavLink href="/admin/markets" current={location} onClick={() => setIsMenuOpen(false)}>
+                  Manage Markets
+                </MobileNavLink>
+                <MobileNavLink href="/admin/users" current={location} onClick={() => setIsMenuOpen(false)}>
+                  Manage Users
+                </MobileNavLink>
+                <MobileNavLink href="/admin/transactions" current={location} onClick={() => setIsMenuOpen(false)}>
+                  Transactions
+                </MobileNavLink>
+              </>
             )}
             
             {user && (
@@ -157,15 +169,15 @@ function MobileNavLink({ href, current, onClick, children }: MobileNavLinkProps)
   
   return (
     <Link href={href}>
-      <a 
+      <div 
         className={cn(
-          "block py-2 px-3 hover:bg-[#0F1923]",
+          "block py-2 px-3 hover:bg-[#0F1923] cursor-pointer",
           isActive ? "text-[#3EA6FF]" : ""
         )}
         onClick={onClick}
       >
         {children}
-      </a>
+      </div>
     </Link>
   );
 }
@@ -181,14 +193,14 @@ function BottomNavLink({ href, current, children }: BottomNavLinkProps) {
   
   return (
     <Link href={href}>
-      <a 
+      <div 
         className={cn(
-          "flex flex-col items-center",
+          "flex flex-col items-center cursor-pointer",
           isActive ? "text-[#3EA6FF]" : "text-gray-300"
         )}
       >
         {children}
-      </a>
+      </div>
     </Link>
   );
 }
