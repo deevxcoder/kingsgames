@@ -196,7 +196,7 @@ const OddEvenGame: React.FC<OddEvenGameProps> = ({ marketId, gameTypeId, odds })
           <div>
             <p className="text-textSecondary">Potential Win</p>
             <p className="text-accent text-xl font-medium">
-              ${calculatePotentialWin().toFixed(2)}
+              ₹{calculatePotentialWin().toLocaleString('en-IN')}
             </p>
           </div>
           <Button
