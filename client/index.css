@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 203 41% 10%;
+    --foreground: 0 0% 100%;
+
+    --card: 209 41% 15%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 209 41% 15%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 203 41% 10%;
+    --primary-foreground: 0 0% 100%;
+
+    --primary-lighter: 203 41% 17%;
+    --primary-darker: 203 41% 7%;
+
+    --secondary: 263 86% 62%;
+    --secondary-foreground: 0 0% 100%;
+
+    --secondary-lighter: 263 86% 72%;
+    --secondary-darker: 263 86% 52%;
+
+    --accent: 175 100% 40%;
+    --accent-foreground: 0 0% 100%;
+
+    --accent-lighter: 175 100% 50%;
+    --accent-darker: 175 100% 30%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 65%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 209 41% 25%;
+    --input: 209 41% 25%;
+    --ring: 175 100% 40%;
+
+    --radius: 0.5rem;
+
+    --chart-1: 250 100% 50%;
+    --chart-2: 220 100% 50%;
+    --chart-3: 190 100% 50%;
+    --chart-4: 160 100% 50%;
+    --chart-5: 130 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+.game-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.game-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 204, 187, 0.15);
+}
+
+.number-grid button {
+  transition: all 0.2s ease;
+}
+
+.number-grid button:hover {
+  transform: scale(1.05);
+}
+
+.coin {
+  width: 100px;
+  height: 100px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 1s ease-in-out;
+}
+
+.coin-side {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  backface-visibility: hidden;
+}
+
+.heads {
+  background: linear-gradient(45deg, #f9a825, #fbc02d);
+  transform: rotateY(0deg);
+}
+
+.tails {
+  background: linear-gradient(45deg, #9575cd, #7e57c2);
+  transform: rotateY(180deg);
+}
+
+@keyframes flip {
+  0% { transform: rotateY(0); }
+  100% { transform: rotateY(720deg); }
+}
+
+.bet-button {
+  transition: all 0.2s ease;
+}
+
+.bet-button:hover {
+  transform: translateY(-2px);
+}
+
+.bet-button:active {
+  transform: translateY(0);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: hsl(var(--primary-lighter));
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #2D3F52;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #3A4C5F;
+}
