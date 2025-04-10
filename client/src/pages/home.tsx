@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,10 +6,25 @@ import { useAuth } from "@/context/auth-context";
 import { useQuery } from "@tanstack/react-query";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Button } from "@/components/ui/button";
+import useEmblaCarousel from "embla-carousel-react";
 
 export default function Home() {
   const [, navigate] = useLocation();
   const { user } = useAuth();
+  
+  // Auto-slide carousel
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "start" });
+  
+  // Auto-play effect
+  useEffect(() => {
+    if (emblaApi) {
+      let intervalId = setInterval(() => {
+        emblaApi.scrollNext();
+      }, 5000); // Auto-slide every 5 seconds
+      
+      return () => clearInterval(intervalId);
+    }
+  }, [emblaApi]);
   
   // Fetch recent results
   const { data: markets, isLoading: isLoadingMarkets } = useQuery({
@@ -76,44 +91,14 @@ export default function Home() {
         
         {/* Promotional Slider Card */}
         <div className="relative overflow-hidden rounded-xl">
-          <Carousel className="w-full h-36 md:h-52">
-            <CarouselContent>
+          <div className="w-full h-36 md:h-52 overflow-hidden" ref={emblaRef}>
+            <div className="flex h-full">
               {promotionalBanners.map((banner) => (
-                <CarouselItem key={banner.id}>
-                  <div className={`w-full h-full p-6 bg-gradient-to-r ${banner.bgColor}`}>
-                    <div className="h-full flex flex-col justify-center">
-                      <h3 className="text-xl md:text-2xl font-bold mb-2">{banner.title}</h3>
-                      <p className="text-sm md:text-base mb-4 text-white/90">{banner.description}</p>
-                      <Link href={banner.buttonLink}>
-                        <Button variant="secondary" className="bg-white text-black hover:bg-white/90">
-                          {banner.buttonText}
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <div className="absolute bottom-2 right-2 flex space-x-2">
-              <CarouselPrevious className="h-8 w-8" />
-              <CarouselNext className="h-8 w-8" />
-            </div>
-          </Carousel>
-        </div>
-      </div>
-      
-      {/* Game Selection Section */}
-      <h2 className="text-xl font-bold mb-4">Popular Games</h2>
-      
-      {/* Promotional Banners Carousel */}
-      <div className="mb-8">
-        <h2 className="text-xl font-bold mb-4">Promotions</h2>
-        <Carousel className="w-full">
-          <CarouselContent>
-            {promotionalBanners.map((banner) => (
-              <CarouselItem key={banner.id}>
-                <div className={`w-full p-6 rounded-xl bg-gradient-to-r ${banner.bgColor}`}>
-                  <div className="md:w-2/3">
+                <div 
+                  key={banner.id} 
+                  className={`w-full h-full flex-shrink-0 flex-grow-0 basis-full p-6 bg-gradient-to-r ${banner.bgColor}`}
+                >
+                  <div className="h-full flex flex-col justify-center">
                     <h3 className="text-xl md:text-2xl font-bold mb-2">{banner.title}</h3>
                     <p className="text-sm md:text-base mb-4 text-white/90">{banner.description}</p>
                     <Link href={banner.buttonLink}>
@@ -123,15 +108,32 @@ export default function Home() {
                     </Link>
                   </div>
                 </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <div className="flex justify-center mt-4">
-            <CarouselPrevious className="static mr-2 translate-y-0" />
-            <CarouselNext className="static ml-2 translate-y-0" />
+              ))}
+            </div>
+            <div className="absolute bottom-2 right-2 flex space-x-2 z-10">
+              <button 
+                onClick={() => emblaApi?.scrollPrev()} 
+                className="h-8 w-8 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center hover:bg-black/50"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m15 18-6-6 6-6"/>
+                </svg>
+              </button>
+              <button 
+                onClick={() => emblaApi?.scrollNext()}
+                className="h-8 w-8 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center hover:bg-black/50"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m9 18 6-6-6-6"/>
+                </svg>
+              </button>
+            </div>
           </div>
-        </Carousel>
+        </div>
       </div>
+      
+      {/* Game Selection Section */}
+      <h2 className="text-xl font-bold mb-4">Popular Games</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         {/* Coin Toss Game Card */}
