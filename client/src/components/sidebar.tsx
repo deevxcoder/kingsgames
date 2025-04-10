@@ -75,14 +75,37 @@ export default function Sidebar() {
         {user?.isAdmin && (
           <>
             <div className="text-xs text-gray-300 uppercase mt-6 mb-2">Admin</div>
+            <NavLink href="/admin/dashboard" current={location}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+              </svg>
+              <span>Dashboard</span>
+            </NavLink>
+            
             <NavLink href="/admin/markets" current={location}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2H2v10h10V2z"></path>
-                <path d="M22 12h-10v10h10V12z"></path>
-                <path d="M12 12H2v10h10V12z"></path>
-                <path d="M22 2h-10v10h10V2z"></path>
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
               </svg>
               <span>Manage Markets</span>
+            </NavLink>
+            
+            <NavLink href="/admin/users" current={location}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              <span>Manage Users</span>
+            </NavLink>
+            
+            <NavLink href="/admin/transactions" current={location}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23" />
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
+              <span>Transactions</span>
             </NavLink>
           </>
         )}
@@ -126,16 +149,16 @@ function NavLink({ href, current, children }: NavLinkProps) {
   
   return (
     <Link href={href}>
-      <a
+      <div
         className={cn(
-          "flex items-center space-x-2 py-2 px-3 rounded-lg",
+          "flex items-center space-x-2 py-2 px-3 rounded-lg cursor-pointer",
           isActive 
             ? "bg-[#3EA6FF]/10 text-[#3EA6FF]" 
             : "hover:bg-[#0A1018]"
         )}
       >
         {children}
-      </a>
+      </div>
     </Link>
   );
 }
