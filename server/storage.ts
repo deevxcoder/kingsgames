@@ -2,6 +2,7 @@ import {
   users, type User, type InsertUser,
   markets, type Market, type InsertMarket,
   gameTypes, type GameType, type InsertGameType,
+  teamMatches, type TeamMatch, type InsertTeamMatch,
   bets, type Bet, type InsertBet
 } from "@shared/schema";
 
@@ -24,6 +25,13 @@ export interface IStorage {
   createGameType(gameType: InsertGameType): Promise<GameType>;
   updateGameType(id: number, data: Partial<GameType>): Promise<GameType | undefined>;
 
+  // Team Match methods
+  getTeamMatches(): Promise<TeamMatch[]>;
+  getTeamMatch(id: number): Promise<TeamMatch | undefined>;
+  createTeamMatch(match: InsertTeamMatch): Promise<TeamMatch>;
+  updateTeamMatch(id: number, data: Partial<TeamMatch>): Promise<TeamMatch | undefined>;
+  setTeamMatchResult(id: number, result: string): Promise<TeamMatch | undefined>;
+
   // Bet methods
   getBets(userId: number): Promise<Bet[]>;
   createBet(bet: InsertBet): Promise<Bet>;
@@ -34,20 +42,24 @@ export class MemStorage implements IStorage {
   private usersMap: Map<number, User>;
   private marketsMap: Map<number, Market>;
   private gameTypesMap: Map<number, GameType>;
+  private teamMatchesMap: Map<number, TeamMatch>;
   private betsMap: Map<number, Bet>;
   private userId: number;
   private marketId: number;
   private gameTypeId: number;
+  private teamMatchId: number;
   private betId: number;
 
   constructor() {
     this.usersMap = new Map();
     this.marketsMap = new Map();
     this.gameTypesMap = new Map();
+    this.teamMatchesMap = new Map();
     this.betsMap = new Map();
     this.userId = 1;
     this.marketId = 1;
     this.gameTypeId = 1;
+    this.teamMatchId = 1;
     this.betId = 1;
 
     // Initialize with admin user
@@ -129,6 +141,46 @@ export class MemStorage implements IStorage {
       marketId: 3, // Rajdhani market ID
       type: "jodi",
       odds: "90",
+    });
+    
+    // Initialize with sample team matches
+    this.createTeamMatch({
+      teamA: "India",
+      teamB: "Pakistan",
+      matchDate: new Date(Date.now() + 86400000), // tomorrow
+      isOpen: true,
+      openTime: "12:00",
+      closeTime: "18:00",
+      oddsTeamA: "1.7",
+      oddsTeamB: "2.1",
+      image: "ind-vs-pak.jpg",
+      category: "cricket"
+    });
+
+    this.createTeamMatch({
+      teamA: "Chennai Super Kings",
+      teamB: "Mumbai Indians",
+      matchDate: new Date(Date.now() + 2 * 86400000), // day after tomorrow
+      isOpen: true,
+      openTime: "14:00",
+      closeTime: "20:00",
+      oddsTeamA: "1.8",
+      oddsTeamB: "1.9",
+      image: "csk-vs-mi.jpg",
+      category: "cricket"
+    });
+
+    this.createTeamMatch({
+      teamA: "Mumbai Indians",
+      teamB: "Royal Challengers Bangalore",
+      matchDate: new Date(Date.now() + 3 * 86400000), // 3 days from now
+      isOpen: true,
+      openTime: "16:00",
+      closeTime: "22:00",
+      oddsTeamA: "1.6",
+      oddsTeamB: "2.2",
+      image: "mi-vs-rcb.jpg",
+      category: "cricket"
     });
   }
 
@@ -235,6 +287,49 @@ export class MemStorage implements IStorage {
     const updatedGameType = { ...gameType, ...data };
     this.gameTypesMap.set(id, updatedGameType);
     return updatedGameType;
+  }
+
+  // Team Match methods
+  async getTeamMatches(): Promise<TeamMatch[]> {
+    return Array.from(this.teamMatchesMap.values());
+  }
+
+  async getTeamMatch(id: number): Promise<TeamMatch | undefined> {
+    return this.teamMatchesMap.get(id);
+  }
+
+  async createTeamMatch(insertMatch: InsertTeamMatch): Promise<TeamMatch> {
+    const id = this.teamMatchId++;
+    const match: TeamMatch = { 
+      ...insertMatch, 
+      id, 
+      result: null 
+    };
+    this.teamMatchesMap.set(id, match);
+    return match;
+  }
+
+  async updateTeamMatch(id: number, data: Partial<TeamMatch>): Promise<TeamMatch | undefined> {
+    const match = this.teamMatchesMap.get(id);
+    if (!match) return undefined;
+    
+    const updatedMatch = { ...match, ...data };
+    this.teamMatchesMap.set(id, updatedMatch);
+    return updatedMatch;
+  }
+
+  async setTeamMatchResult(id: number, result: string): Promise<TeamMatch | undefined> {
+    const match = this.teamMatchesMap.get(id);
+    if (!match) return undefined;
+    
+    const updatedMatch = { 
+      ...match, 
+      result,
+      isOpen: false // Close the match once result is declared
+    };
+    
+    this.teamMatchesMap.set(id, updatedMatch);
+    return updatedMatch;
   }
 
   // Bet methods

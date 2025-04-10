@@ -8,9 +8,12 @@ import {
   insertUserSchema, 
   coinTossBetSchema, 
   sattamatkaBetSchema,
+  teamMatchBetSchema,
   declareResultSchema,
+  declareMatchResultSchema,
   insertMarketSchema,
-  insertGameTypeSchema
+  insertGameTypeSchema,
+  insertTeamMatchSchema
 } from "@shared/schema";
 import session from "express-session";
 import { z } from "zod";
