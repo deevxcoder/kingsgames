@@ -16,9 +16,12 @@ import {
   insertTeamMatchSchema
 } from "@shared/schema";
 import session from "express-session";
+import pgSession from "connect-pg-simple";
+import { pool } from "./db";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 
 // Helper for validating request body
 const validateBody = <T>(schema: z.ZodType<T>) => {
@@ -63,9 +66,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup WebSocket server for real-time updates
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
+  // Setup PostgreSQL session store
+  const pgStore = pgSession(session);
+  
   // Setup session middleware
   app.use(
     session({
+      store: new pgStore({
+        pool: pool,
+        tableName: 'session', // Sessions table name
+        createTableIfMissing: true
+      }),
       secret: process.env.SESSION_SECRET || "betx-secret-key",
       resave: false,
       saveUninitialized: false,
@@ -82,10 +93,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { username, password } = req.body;
       
       const user = await storage.getUserByUsername(username);
-      if (!user || user.password !== password) {
+      if (!user) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
       
+      // Compare passwords using bcrypt
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      // Store user ID in session
       req.session.userId = user.id;
       
       return res.json({
@@ -109,12 +127,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Username already taken" });
       }
       
+      // Hash password before storing
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
       const user = await storage.createUser({
         username,
-        password,
+        password: hashedPassword,
         isAdmin: false,
       });
       
+      // Store user ID in session
       req.session.userId = user.id;
       
       return res.json({

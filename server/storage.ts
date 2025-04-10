@@ -369,4 +369,7 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { drizzleStorage } from './drizzle-storage';
+
+// Use the Drizzle implementation for real database storage
+export const storage = drizzleStorage;
