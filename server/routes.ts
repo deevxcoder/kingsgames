@@ -247,6 +247,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const markets = await storage.getMarkets();
     return res.json(markets);
   });
+  
+  // Get market by ID
+  app.get("/api/markets/:id", async (req, res) => {
+    try {
+      const marketId = parseInt(req.params.id);
+      const market = await storage.getMarket(marketId);
+      
+      if (!market) {
+        return res.status(404).json({ error: 'Market not found' });
+      }
+      
+      return res.json(market);
+    } catch (error) {
+      console.error('Error fetching market:', error);
+      return res.status(500).json({ error: 'Failed to fetch market' });
+    }
+  });
 
   app.get("/api/markets/:id/game-types", async (req, res) => {
     const marketId = parseInt(req.params.id);

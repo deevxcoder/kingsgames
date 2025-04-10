@@ -2,6 +2,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import marketBgImage from "../../assets/market-card-bg.svg";
+import marketCoverImage from "../../assets/market-card-cover.svg";
+import { Link } from "wouter";
 
 interface MarketCardProps {
   id: number;
@@ -10,8 +12,9 @@ interface MarketCardProps {
   closeTime: string;
   isOpen: boolean;
   lastResult: string | null;
-  isSelected: boolean;
-  onClick: () => void;
+  isSelected?: boolean;
+  onClick?: () => void;
+  linkToDetails?: boolean;
 }
 
 export function MarketCard({
@@ -21,37 +24,36 @@ export function MarketCard({
   closeTime,
   isOpen,
   lastResult,
-  isSelected,
-  onClick
+  isSelected = false,
+  onClick,
+  linkToDetails = false
 }: MarketCardProps) {
-  return (
-    <Card 
-      className={cn(
-        "cursor-pointer transition-all duration-200 overflow-hidden",
-        "relative border-gray-500/30 hover:border-[#3EA6FF]/50",
-        "transform hover:-translate-y-1",
-        isSelected ? "ring-2 ring-[#3EA6FF]" : ""
-      )}
-      onClick={onClick}
-    >
-      <div className="absolute top-0 left-0 w-full h-full">
-        <img src={marketBgImage} alt="" className="w-full h-full object-cover" />
-      </div>
-      
-      <CardContent className="relative p-4 z-10">
-        <div className="flex justify-between items-start mb-4">
-          <h3 className="text-lg font-bold">{name}</h3>
+  const cardContent = (
+    <>
+      {/* Cover Image */}
+      <div className="w-full h-[120px] relative overflow-hidden">
+        <img src={marketCoverImage} alt="" className="w-full h-full object-cover" />
+        <div className="absolute bottom-0 right-0 p-2">
           <Badge 
             className={cn(
-              "ml-2 px-2 py-1",
+              "ml-2 px-3 py-1 text-xs",
               isOpen 
-                ? "bg-green-500/20 text-green-400 hover:bg-green-500/30" 
-                : "bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                ? "bg-green-500/80 text-white hover:bg-green-500" 
+                : "bg-red-500/80 text-white hover:bg-red-500"
             )}
           >
             {isOpen ? "OPEN" : "CLOSED"}
           </Badge>
         </div>
+      </div>
+      
+      {/* Market background */}
+      <div className="absolute top-[120px] left-0 right-0 bottom-0">
+        <img src={marketBgImage} alt="" className="w-full h-full object-cover" />
+      </div>
+      
+      <CardContent className="relative p-4 z-10 pt-4">
+        <h3 className="text-lg font-bold mb-4">{name}</h3>
         
         <div className="space-y-3">
           <div className="flex justify-between items-center text-sm">
@@ -76,6 +78,34 @@ export function MarketCard({
           </div>
         </div>
       </CardContent>
+    </>
+  );
+
+  const cardClasses = cn(
+    "transition-all duration-200 overflow-hidden",
+    "relative border-gray-500/30 hover:border-[#3EA6FF]/50",
+    "transform hover:-translate-y-1 h-full",
+    isSelected ? "ring-2 ring-[#3EA6FF]" : ""
+  );
+
+  if (linkToDetails) {
+    return (
+      <Link href={`/market/${id}`}>
+        <a className="block h-full">
+          <Card className={cn(cardClasses, "cursor-pointer")}>
+            {cardContent}
+          </Card>
+        </a>
+      </Link>
+    );
+  }
+
+  return (
+    <Card 
+      className={cn(cardClasses, onClick ? "cursor-pointer" : "")}
+      onClick={onClick}
+    >
+      {cardContent}
     </Card>
   );
 }
