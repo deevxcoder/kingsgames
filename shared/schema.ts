@@ -1,140 +1,119 @@
-import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, foreignKey } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Users
+// User schema
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  balance: doublePrecision("balance").notNull().default(0),
-  isAdmin: boolean("is_admin").notNull().default(false),
+  isAdmin: boolean("is_admin").default(false).notNull(),
+  walletBalance: decimal("wallet_balance", { precision: 10, scale: 2 }).default("1000").notNull(),
 });
 
-// Markets (e.g., Mumbai Matka, Kalyan Matka)
-export const markets = pgTable("markets", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(),
-  isOpen: boolean("is_open").notNull().default(true),
-  closingTime: timestamp("closing_time"),
-  lastResult: text("last_result"),
-  lastResultTimestamp: timestamp("last_result_timestamp"),
-  createdBy: integer("created_by").references(() => users.id),
-});
-
-// Game Types (Jodi, Odd-Even, Hurf, Cross)
-export const gameTypes = pgTable("game_types", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(),
-  description: text("description"),
-  odds: doublePrecision("odds").notNull(),
-});
-
-// Market Game Types (relation table)
-export const marketGameTypes = pgTable("market_game_types", {
-  id: serial("id").primaryKey(),
-  marketId: integer("market_id").references(() => markets.id).notNull(),
-  gameTypeId: integer("game_type_id").references(() => gameTypes.id).notNull(),
-  odds: doublePrecision("odds").notNull(),
-});
-
-// Bets
-export const bets = pgTable("bets", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  marketId: integer("market_id").references(() => markets.id).notNull(),
-  gameTypeId: integer("game_type_id").references(() => gameTypes.id).notNull(),
-  amount: doublePrecision("amount").notNull(),
-  selection: text("selection").notNull(), // Store as string (e.g., "57" for Jodi, "Odd" for Odd-Even)
-  potentialWin: doublePrecision("potential_win").notNull(),
-  result: text("result"),
-  status: text("status").notNull().default("pending"), // pending, won, lost
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Transactions
-export const transactions = pgTable("transactions", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  amount: doublePrecision("amount").notNull(),
-  type: text("type").notNull(), // deposit, withdraw, bet, win
-  description: text("description"),
-  betId: integer("bet_id").references(() => bets.id),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Coin Toss Results
-export const coinTossResults = pgTable("coin_toss_results", {
-  id: serial("id").primaryKey(),
-  result: text("result").notNull(), // heads, tails
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Insert Schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
   isAdmin: true,
 });
 
+// Market schema
+export const markets = pgTable("markets", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  isOpen: boolean("is_open").default(true).notNull(),
+  openTime: text("open_time").notNull(), // Format: HH:MM
+  closeTime: text("close_time").notNull(), // Format: HH:MM
+  lastResult: text("last_result"),
+  lastResultTime: timestamp("last_result_time"),
+});
+
 export const insertMarketSchema = createInsertSchema(markets).pick({
   name: true,
   isOpen: true,
-  closingTime: true,
-  createdBy: true,
+  openTime: true,
+  closeTime: true,
+});
+
+// Game types
+export const gameTypes = pgTable("game_types", {
+  id: serial("id").primaryKey(),
+  marketId: integer("market_id").notNull(),
+  type: text("type").notNull(), // "jodi", "hurf", "cross", "odd-even"
+  odds: decimal("odds", { precision: 10, scale: 2 }).notNull(),
+  doubleMatchOdds: decimal("double_match_odds", { precision: 10, scale: 2 }), // For Hurf game
 });
 
 export const insertGameTypeSchema = createInsertSchema(gameTypes).pick({
-  name: true,
-  description: true,
+  marketId: true,
+  type: true,
   odds: true,
+  doubleMatchOdds: true,
 });
 
-export const insertMarketGameTypeSchema = createInsertSchema(marketGameTypes).pick({
-  marketId: true,
-  gameTypeId: true,
-  odds: true,
+// Bets schema
+export const bets = pgTable("bets", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  marketId: integer("market_id").notNull(),
+  gameType: text("game_type").notNull(), // "coin-toss", "jodi", "hurf", "cross", "odd-even"
+  betAmount: decimal("bet_amount", { precision: 10, scale: 2 }).notNull(),
+  selection: text("selection").notNull(), // "heads", "tails", "00-99" for jodi, etc.
+  odds: decimal("odds", { precision: 10, scale: 2 }).notNull(),
+  result: text("result"),
+  winAmount: decimal("win_amount", { precision: 10, scale: 2 }),
+  status: text("status").default("pending").notNull(), // "pending", "won", "lost"
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const insertBetSchema = createInsertSchema(bets).pick({
   userId: true,
   marketId: true,
-  gameTypeId: true,
-  amount: true,
+  gameType: true,
+  betAmount: true,
   selection: true,
-  potentialWin: true,
+  odds: true,
 });
 
-export const insertTransactionSchema = createInsertSchema(transactions).pick({
-  userId: true,
-  amount: true,
-  type: true,
-  description: true,
-  betId: true,
-});
-
-export const insertCoinTossResultSchema = createInsertSchema(coinTossResults).pick({
-  result: true,
-});
-
-// Types
-export type InsertUser = z.infer<typeof insertUserSchema>;
+// Export types
 export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
 
-export type InsertMarket = z.infer<typeof insertMarketSchema>;
 export type Market = typeof markets.$inferSelect;
+export type InsertMarket = z.infer<typeof insertMarketSchema>;
 
-export type InsertGameType = z.infer<typeof insertGameTypeSchema>;
 export type GameType = typeof gameTypes.$inferSelect;
+export type InsertGameType = z.infer<typeof insertGameTypeSchema>;
 
-export type InsertMarketGameType = z.infer<typeof insertMarketGameTypeSchema>;
-export type MarketGameType = typeof marketGameTypes.$inferSelect;
-
-export type InsertBet = z.infer<typeof insertBetSchema>;
 export type Bet = typeof bets.$inferSelect;
+export type InsertBet = z.infer<typeof insertBetSchema>;
 
-export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
-export type Transaction = typeof transactions.$inferSelect;
+// Custom schemas
+export const loginSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
 
-export type InsertCoinTossResult = z.infer<typeof insertCoinTossResultSchema>;
-export type CoinTossResult = typeof coinTossResults.$inferSelect;
+export const coinTossBetSchema = z.object({
+  betAmount: z.number().min(1, "Bet amount must be at least 1"),
+  selection: z.enum(["heads", "tails"], {
+    required_error: "You must select heads or tails",
+  }),
+});
+
+export const sattamatkaBetSchema = z.object({
+  marketId: z.number(),
+  gameType: z.enum(["jodi", "hurf", "cross", "odd-even"]),
+  betAmount: z.number().min(1, "Bet amount must be at least 1"),
+  selection: z.string(),
+});
+
+export const declareResultSchema = z.object({
+  marketId: z.number(),
+  result: z.string(),
+});
+
+export type LoginData = z.infer<typeof loginSchema>;
+export type CoinTossBetData = z.infer<typeof coinTossBetSchema>;
+export type SattamatkaBetData = z.infer<typeof sattamatkaBetSchema>;
+export type DeclareResultData = z.infer<typeof declareResultSchema>;
