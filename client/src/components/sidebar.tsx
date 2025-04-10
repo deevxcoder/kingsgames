@@ -112,26 +112,38 @@ export default function Sidebar() {
       </nav>
       
       <div className="mt-auto p-3 rounded-lg bg-[#0A1018]">
-        <div className="text-sm text-gray-300 mb-1">Wallet Balance</div>
-        <div className="text-lg font-mono font-bold">₹{parseFloat(balance).toLocaleString('en-IN')}</div>
-        <button 
-          className="mt-2 w-full bg-[#3EA6FF] hover:bg-[#4DB8FF] py-1.5 px-3 rounded text-sm"
-          onClick={() => {}}
-        >
-          Deposit
-        </button>
-        
-        {user && (
-          <div className="mt-4 pt-4 border-t border-gray-500/30">
-            <div className="text-sm text-gray-300 mb-1">Logged in as</div>
-            <div className="text-sm font-medium mb-2">{user.username}</div>
+        {user ? (
+          <>
+            <div className="text-sm text-gray-300 mb-1">Wallet Balance</div>
+            <div className="text-lg font-mono font-bold">₹{parseFloat(balance).toLocaleString('en-IN')}</div>
             <button 
-              className="w-full bg-[#0F1923] hover:bg-[#0F1923]/80 py-1.5 px-3 rounded text-sm border border-gray-500/30"
-              onClick={logout}
+              className="mt-2 w-full bg-[#3EA6FF] hover:bg-[#4DB8FF] py-1.5 px-3 rounded text-sm"
+              onClick={() => {}}
             >
-              Logout
+              Deposit
             </button>
-          </div>
+            
+            <div className="mt-4 pt-4 border-t border-gray-500/30">
+              <div className="text-sm text-gray-300 mb-1">Logged in as</div>
+              <div className="text-sm font-medium mb-2">{user.username}</div>
+              <button 
+                className="w-full bg-[#0F1923] hover:bg-[#0F1923]/80 py-1.5 px-3 rounded text-sm border border-gray-500/30"
+                onClick={logout}
+              >
+                Logout
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="text-sm text-gray-300 mb-1">Welcome to BetX</div>
+            <div className="text-sm mb-3">Please login or register to start betting</div>
+            <Link href="/login">
+              <div className="w-full bg-[#3EA6FF] hover:bg-[#4DB8FF] py-1.5 px-3 rounded text-sm text-center cursor-pointer">
+                Login / Register
+              </div>
+            </Link>
+          </>
         )}
       </div>
     </aside>
