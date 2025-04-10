@@ -1,0 +1,88 @@
+ame Structure
+Market System
+
+Markets: Top-level game categories (e.g., Mumbai Matka, Kalyan Matka)
+Admin creates markets and controls their opening/closing times
+Admin declares results manually for each market
+
+Game Types
+
+Game type templates: Jodi, Hurf, Cross, Odd-Even with each game type logic and UI for betting
+When creating a market, admin selects which game types to include
+Players see only the games available in their selected market
+
+Game Types & Logic
+1. Jodi
+
+Description: Players bet on a two-digit number from 00 to 99
+Gameplay:
+
+User selects any number between 00 and 99
+Admin declares a two-digit result for the market
+User wins if their selected number exactly matches the result
+
+
+Winning Odds: x90 (configurable by admin)
+UI Design: Interactive number grid with color-coded selection feedback and animated confirmation
+
+2. Odd-Even
+
+Description: Players bet on whether the result will be an odd or even number
+Gameplay:
+
+User selects either "Odd" or "Even"
+Admin declares a result number for the market
+User wins if their selection (odd/even) matches the result's property
+
+
+Winning Odds: x1.8 (configurable by admin)
+UI Design: Toggle switch with animated state transition and clear visual differentiation
+
+3. Hurf
+
+Description: Players bet on specific digits (left or right) of a two-digit number
+Gameplay:
+
+User selects a digit (0-9) for either the left position or right position
+Admin declares a two-digit result (e.g., 57)
+User wins if their selected digit matches the corresponding position in the result
+If user selects digits for both positions and both match, they win the higher "Double Match" payout
+
+
+Winning Odds:
+
+Single digit match: x9 (configurable by admin)
+Double digit match: x80 (configurable by admin)
+
+
+UI Design: Two distinct selection areas with animated position indicators and win probability visualization
+
+4. Cross
+
+Description: Players bet on individual digits that can form permutations
+Gameplay:
+
+User selects multiple individual digits (e.g., 1,3,7)
+System generates all possible two-digit permutations (e.g., 13,31,17,71,37,73)
+Admin declares a two-digit result
+User wins if any of the permutations match the result
+
+
+Winning Odds: Varies based on the number of digits selected (configurable by admin)
+
+For 2 digits selected (2 permutations): x45
+For 3 digits selected (6 permutations): x15
+For 4 digits selected (12 permutations): x7.5
+
+
+UI Design: Multi-select digit pad with real-time permutation display and dynamic odds calculation
+
+Gameplay Flow
+
+Admin opens market with selected game types
+Players select a market (e.g., Mumbai Matka)
+Players see available games for that market (e.g., Jodi and Cross)
+Players place bets on their chosen game
+Admin closes market and declares results manually
+System determines winners based on bet matching results
+Winnings are automatically credited to user wallets
