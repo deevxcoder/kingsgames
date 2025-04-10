@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { MarketCard } from "@/components/ui/market-card";
 import { GameTypeCard } from "@/components/ui/game-type-card";
+import { GameTypeBanner } from "@/components/ui/game-type-banner";
 import { useWallet } from "@/context/wallet-context";
 import { useToast } from "@/hooks/use-toast";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -375,16 +376,50 @@ export default function MarketDetails() {
         {gameTypesQuery.isLoading ? (
           <div className="text-center py-4">Loading game types...</div>
         ) : gameTypesQuery.data && gameTypesQuery.data.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {gameTypesQuery.data.map((gameType) => (
-              <GameTypeCard
-                key={gameType.type}
-                type={gameType.type}
-                odds={gameType.odds}
-                isSelected={activeGameType === gameType.type}
-                onClick={() => setActiveGameType(gameType.type as GameType)}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {gameTypesQuery.data.some(gt => gt.type === "jodi") && (
+              <GameTypeBanner
+                type="jodi"
+                description="Bet on a two-digit number from 00 to 99. Win if your number matches the result exactly."
+                icon="🎯"
+                odds={gameTypesQuery.data.find(gt => gt.type === "jodi")?.odds || "90"}
+                isSelected={activeGameType === "jodi"}
+                onClick={() => setActiveGameType("jodi")}
               />
-            ))}
+            )}
+            
+            {gameTypesQuery.data.some(gt => gt.type === "odd-even") && (
+              <GameTypeBanner
+                type="odd-even"
+                description="Bet on whether the result will be an odd or even number. Simple 50/50 odds."
+                icon="⚖️"
+                odds={gameTypesQuery.data.find(gt => gt.type === "odd-even")?.odds || "1.8"}
+                isSelected={activeGameType === "odd-even"}
+                onClick={() => setActiveGameType("odd-even")}
+              />
+            )}
+            
+            {gameTypesQuery.data.some(gt => gt.type === "hurf") && (
+              <GameTypeBanner
+                type="hurf"
+                description="Bet on specific digits by position (left or right). Double rewards for matching both!"
+                icon="🔢"
+                odds={gameTypesQuery.data.find(gt => gt.type === "hurf")?.odds || "9"}
+                isSelected={activeGameType === "hurf"}
+                onClick={() => setActiveGameType("hurf")}
+              />
+            )}
+            
+            {gameTypesQuery.data.some(gt => gt.type === "cross") && (
+              <GameTypeBanner
+                type="cross"
+                description="Select multiple digits to generate permutations. More combinations, more chances to win!"
+                icon="🔄"
+                odds={gameTypesQuery.data.find(gt => gt.type === "cross")?.odds || "45"}
+                isSelected={activeGameType === "cross"}
+                onClick={() => setActiveGameType("cross")}
+              />
+            )}
           </div>
         ) : (
           <div className="text-center py-4 text-gray-400">
