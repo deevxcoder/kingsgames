@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
 import { useQuery } from "@tanstack/react-query";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const [, navigate] = useLocation();
@@ -14,6 +16,40 @@ export default function Home() {
     queryKey: ['/api/markets'],
     enabled: !!user,
   });
+  
+  // Fetch team matches
+  const { data: teamMatches = [], isLoading: isLoadingTeamMatches } = useQuery({
+    queryKey: ['/api/team-matches'],
+    enabled: !!user,
+  });
+  
+  // Sample promotional banners data
+  const promotionalBanners = [
+    {
+      id: 1,
+      title: "Welcome Bonus",
+      description: "Get 100% bonus on your first deposit up to ₹1,000",
+      bgColor: "from-blue-600 to-blue-900",
+      buttonText: "Claim Now",
+      buttonLink: "/wallet"
+    },
+    {
+      id: 2,
+      title: "Refer & Earn",
+      description: "Invite friends and earn ₹100 for each successful referral",
+      bgColor: "from-purple-600 to-purple-900",
+      buttonText: "Invite Friends",
+      buttonLink: "/referral"
+    },
+    {
+      id: 3,
+      title: "Daily Bonus",
+      description: "Login daily to claim your free bonus rewards",
+      bgColor: "from-green-600 to-green-900",
+      buttonText: "Claim Bonus",
+      buttonLink: "/rewards"
+    }
+  ];
   
   return (
     <div>
@@ -39,7 +75,35 @@ export default function Home() {
       {/* Game Selection Section */}
       <h2 className="text-xl font-bold mb-4">Popular Games</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+      {/* Promotional Banners Carousel */}
+      <div className="mb-8">
+        <h2 className="text-xl font-bold mb-4">Promotions</h2>
+        <Carousel className="w-full">
+          <CarouselContent>
+            {promotionalBanners.map((banner) => (
+              <CarouselItem key={banner.id}>
+                <div className={`w-full p-6 rounded-xl bg-gradient-to-r ${banner.bgColor}`}>
+                  <div className="md:w-2/3">
+                    <h3 className="text-xl md:text-2xl font-bold mb-2">{banner.title}</h3>
+                    <p className="text-sm md:text-base mb-4 text-white/90">{banner.description}</p>
+                    <Link href={banner.buttonLink}>
+                      <Button variant="secondary" className="bg-white text-black hover:bg-white/90">
+                        {banner.buttonText}
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <div className="flex justify-center mt-4">
+            <CarouselPrevious className="static mr-2 translate-y-0" />
+            <CarouselNext className="static ml-2 translate-y-0" />
+          </div>
+        </Carousel>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         {/* Coin Toss Game Card */}
         <motion.div 
           className="game-card bg-[#1A2C3D] rounded-xl overflow-hidden shadow-lg border border-gray-500/30 cursor-pointer"
@@ -81,6 +145,29 @@ export default function Home() {
             <p className="text-gray-300 text-sm mb-3">Multiple game types with higher odds and bigger payouts!</p>
             <div className="flex justify-between items-center">
               <span className="text-xs bg-[#0F1923] py-1 px-2 rounded-full">4 Game Types</span>
+              <button className="bg-[#3EA6FF] text-white py-1.5 px-3 rounded-lg text-sm">Play Now</button>
+            </div>
+          </div>
+        </motion.div>
+        
+        {/* Team Matches Game Card */}
+        <motion.div 
+          className="game-card bg-[#1A2C3D] rounded-xl overflow-hidden shadow-lg border border-gray-500/30 cursor-pointer"
+          whileHover={{ scale: 1.03 }}
+          transition={{ duration: 0.2 }}
+          onClick={() => navigate("/team-matches")}
+        >
+          <div className="relative">
+            <div className="w-full h-36 bg-gradient-to-br from-[#1A2C3D] to-[#112233]" />
+            <div className="absolute top-2 right-2 bg-[#4CAF50] text-white text-xs py-1 px-2 rounded-full">
+              NEW
+            </div>
+          </div>
+          <div className="p-4">
+            <h3 className="text-lg font-bold mb-1">Team Matches</h3>
+            <p className="text-gray-300 text-sm mb-3">Bet on your favorite sports teams and win big!</p>
+            <div className="flex justify-between items-center">
+              <span className="text-xs bg-[#0F1923] py-1 px-2 rounded-full">Cricket, Football & More</span>
               <button className="bg-[#3EA6FF] text-white py-1.5 px-3 rounded-lg text-sm">Play Now</button>
             </div>
           </div>
