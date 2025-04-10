@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TeamMatchCard } from "@/components/ui/team-match-card";
 import { TeamMatch } from "@shared/schema";
-import Layout from "@/components/Layout";
 import { Trophy, Clock, Calendar } from "lucide-react";
 
 // Define common categories for the dropdown filter
@@ -34,103 +33,101 @@ export default function TeamMatches() {
   const completedMatches = filteredMatches.filter(match => !!match.result);
 
   return (
-    <Layout>
-      <div className="container mx-auto py-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Team Matches</h1>
-            <p className="text-muted-foreground">Place bets on your favorite teams</p>
-          </div>
-          
-          {/* Category filter */}
-          <div className="w-40">
-            <Select value={activeCategory} onValueChange={setActiveCategory}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by category" />
-              </SelectTrigger>
-              <SelectContent>
-                {matchCategories.map((category: string) => (
-                  <SelectItem key={category} value={category}>{category}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+    <div className="container mx-auto py-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Team Matches</h1>
+          <p className="text-muted-foreground">Place bets on your favorite teams</p>
         </div>
         
-        {/* Match Status Tabs */}
-        <Tabs defaultValue="upcoming" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="upcoming">Upcoming Matches</TabsTrigger>
-            <TabsTrigger value="completed">Completed Matches</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="upcoming">
-            {isLoading ? (
-              <div className="text-center py-8">
-                <p>Loading matches...</p>
-              </div>
-            ) : upcomingMatches.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No upcoming matches available</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {upcomingMatches.map((match: TeamMatch) => (
-                  <TeamMatchCard
-                    key={match.id}
-                    id={match.id}
-                    teamA={match.teamA}
-                    teamB={match.teamB}
-                    matchDate={match.matchDate}
-                    openTime={match.openTime}
-                    closeTime={match.closeTime}
-                    isOpen={match.isOpen}
-                    result={match.result}
-                    oddsTeamA={match.oddsTeamA}
-                    oddsTeamB={match.oddsTeamB}
-                    category={match.category || "Cricket"}
-                    image={match.image}
-                    linkToDetails={true}
-                  />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="completed">
-            {isLoading ? (
-              <div className="text-center py-8">
-                <p>Loading matches...</p>
-              </div>
-            ) : completedMatches.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No completed matches available</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {completedMatches.map((match: TeamMatch) => (
-                  <TeamMatchCard
-                    key={match.id}
-                    id={match.id}
-                    teamA={match.teamA}
-                    teamB={match.teamB}
-                    matchDate={match.matchDate}
-                    openTime={match.openTime}
-                    closeTime={match.closeTime}
-                    isOpen={match.isOpen}
-                    result={match.result}
-                    oddsTeamA={match.oddsTeamA}
-                    oddsTeamB={match.oddsTeamB}
-                    category={match.category || "Cricket"}
-                    image={match.image}
-                    linkToDetails={true}
-                  />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+        {/* Category filter */}
+        <div className="w-40">
+          <Select value={activeCategory} onValueChange={setActiveCategory}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by category" />
+            </SelectTrigger>
+            <SelectContent>
+              {matchCategories.map((category: string) => (
+                <SelectItem key={category} value={category}>{category}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-    </Layout>
+      
+      {/* Match Status Tabs */}
+      <Tabs defaultValue="upcoming" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="upcoming">Upcoming Matches</TabsTrigger>
+          <TabsTrigger value="completed">Completed Matches</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="upcoming">
+          {isLoading ? (
+            <div className="text-center py-8">
+              <p>Loading matches...</p>
+            </div>
+          ) : upcomingMatches.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No upcoming matches available</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {upcomingMatches.map((match: TeamMatch) => (
+                <TeamMatchCard
+                  key={match.id}
+                  id={match.id}
+                  teamA={match.teamA}
+                  teamB={match.teamB}
+                  matchDate={match.matchDate}
+                  openTime={match.openTime}
+                  closeTime={match.closeTime}
+                  isOpen={match.isOpen}
+                  result={match.result}
+                  oddsTeamA={match.oddsTeamA}
+                  oddsTeamB={match.oddsTeamB}
+                  category={match.category || "Cricket"}
+                  image={match.image}
+                  linkToDetails={true}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="completed">
+          {isLoading ? (
+            <div className="text-center py-8">
+              <p>Loading matches...</p>
+            </div>
+          ) : completedMatches.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No completed matches available</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {completedMatches.map((match: TeamMatch) => (
+                <TeamMatchCard
+                  key={match.id}
+                  id={match.id}
+                  teamA={match.teamA}
+                  teamB={match.teamB}
+                  matchDate={match.matchDate}
+                  openTime={match.openTime}
+                  closeTime={match.closeTime}
+                  isOpen={match.isOpen}
+                  result={match.result}
+                  oddsTeamA={match.oddsTeamA}
+                  oddsTeamB={match.oddsTeamB}
+                  category={match.category || "Cricket"}
+                  image={match.image}
+                  linkToDetails={true}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
