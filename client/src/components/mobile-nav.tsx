@@ -83,7 +83,7 @@ export default function MobileNav() {
               </>
             )}
             
-            {user && (
+            {user ? (
               <div className="p-3 border-t border-gray-500/30 mt-2">
                 <div className="flex justify-between items-center">
                   <div>
@@ -109,6 +109,19 @@ export default function MobileNav() {
                     </button>
                   </div>
                 </div>
+              </div>
+            ) : (
+              <div className="p-3 border-t border-gray-500/30 mt-2">
+                <div className="text-sm text-gray-300 mb-1">Welcome to BetX</div>
+                <div className="text-sm mb-3">Please login or register to start betting</div>
+                <Link href="/login">
+                  <div 
+                    className="w-full bg-[#3EA6FF] hover:bg-[#4DB8FF] py-2 px-3 rounded text-center cursor-pointer"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Login / Register
+                  </div>
+                </Link>
               </div>
             )}
           </div>
@@ -144,14 +157,25 @@ export default function MobileNav() {
           <span className="text-xs mt-1">Sattamatka</span>
         </BottomNavLink>
         
-        <BottomNavLink href="/wallet" current={location}>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
-            <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
-            <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
-          </svg>
-          <span className="text-xs mt-1">Wallet</span>
-        </BottomNavLink>
+        {user ? (
+          <BottomNavLink href="/wallet" current={location}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+              <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+              <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
+            </svg>
+            <span className="text-xs mt-1">Wallet</span>
+          </BottomNavLink>
+        ) : (
+          <BottomNavLink href="/login" current={location}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+              <polyline points="10 17 15 12 10 7" />
+              <line x1="15" y1="12" x2="3" y2="12" />
+            </svg>
+            <span className="text-xs mt-1">Login</span>
+          </BottomNavLink>
+        )}
       </nav>
     </>
   );
