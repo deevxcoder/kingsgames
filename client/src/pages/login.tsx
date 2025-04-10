@@ -18,11 +18,26 @@ export default function LoginPage() {
     e.preventDefault();
     
     if (activeTab === "login") {
-      await login(username, password);
-      navigate("/");
+      try {
+        await login(username, password);
+        // After successful login, check if user is admin and redirect accordingly
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        
+        if (currentUser && currentUser.isAdmin) {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("Login error:", error);
+      }
     } else {
-      await register(username, password);
-      navigate("/");
+      try {
+        await register(username, password);
+        navigate("/");
+      } catch (error) {
+        console.error("Registration error:", error);
+      }
     }
   };
 

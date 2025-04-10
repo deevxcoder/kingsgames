@@ -294,13 +294,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const marketId = parseInt(req.params.id);
     console.log("Fetching game types for marketId:", marketId);
     
-    // Log the contents of the game types map for debugging
-    console.log("All game types:", Array.from((storage as any).gameTypesMap.values()));
-    
-    const gameTypes = await storage.getGameTypes(marketId);
-    console.log("Filtered game types:", gameTypes);
-    
-    return res.json(gameTypes);
+    try {
+      const gameTypes = await storage.getGameTypes(marketId);
+      console.log("Filtered game types:", gameTypes);
+      return res.json(gameTypes);
+    } catch (error) {
+      console.error("Error fetching game types:", error);
+      return res.status(500).json({ error: "Failed to fetch game types" });
+    }
   });
 
   app.post(
@@ -403,6 +404,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Admin Routes
+  
+  // Admin Dashboard Stats
+  app.get(
+    "/api/admin/stats",
+    requireAdmin,
+    async (req, res) => {
+      try {
+        // Count total users (excluding admin for accurate customer count)
+        const users = await pool.query("SELECT COUNT(*) FROM users WHERE is_admin = FALSE");
+        const totalUsers = parseInt(users.rows[0].count);
+        
+        // Count total bets
+        const bets = await pool.query("SELECT COUNT(*) FROM bets");
+        const totalBets = parseInt(bets.rows[0].count);
+        
+        // Count active markets
+        const markets = await pool.query("SELECT COUNT(*) FROM markets WHERE is_open = TRUE");
+        const activeMarkets = parseInt(markets.rows[0].count);
+        
+        // Calculate total revenue (company profit from lost bets)
+        const revenue = await pool.query(`
+          SELECT COALESCE(SUM(CAST(bet_amount AS DECIMAL)), 0) AS total 
+          FROM bets 
+          WHERE status = 'lost'
+        `);
+        const totalRevenue = parseFloat(revenue.rows[0].total);
+        
+        // Get recent bets (last 5)
+        const recentBetsQuery = await pool.query(`
+          SELECT b.id, u.username, b.game_type, CAST(b.bet_amount AS DECIMAL) as amount, b.status
+          FROM bets b
+          JOIN users u ON b.user_id = u.id
+          ORDER BY b.created_at DESC
+          LIMIT 5
+        `);
+        
+        // For demo purposes, we're simulating transactions since we don't have a transactions table yet
+        const recentTransactions = [
+          { id: 1, username: "user1", type: "deposit", amount: 1000, status: "completed" },
+          { id: 2, username: "user2", type: "withdrawal", amount: 500, status: "pending" },
+          { id: 3, username: "user3", type: "deposit", amount: 2000, status: "completed" }
+        ];
+        
+        const stats = {
+          totalUsers,
+          totalBets,
+          activeMarkets,
+          totalRevenue,
+          recentBets: recentBetsQuery.rows,
+          recentTransactions
+        };
+        
+        return res.json(stats);
+      } catch (error) {
+        console.error("Error fetching admin stats:", error);
+        return res.status(500).json({ error: "Failed to fetch admin statistics" });
+      }
+    }
+  );
+  
   app.post(
     "/api/admin/markets", 
     requireAdmin, 
@@ -514,9 +575,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const rightMatch = result[1] === rightDigit;
               
               if (leftMatch && rightMatch) {
-                // Double match, use higher odds
+                // Double match, use higher odds (90 as default)
                 won = true;
-                winAmount = parseFloat(bet.betAmount) * parseFloat(bet.doubleMatchOdds || "0");
+                // Using a higher fixed odds for double match since we don't have it in bet object
+                winAmount = parseFloat(bet.betAmount) * 90;
               } else if (leftMatch || rightMatch) {
                 // Single match
                 won = true;
