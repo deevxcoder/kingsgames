@@ -105,11 +105,12 @@ export default function TeamMatchDetails() {
     <div className="container mx-auto py-6">
       {/* Header with Back Button */}
       <div className="flex items-center mb-6">
-        <Link href="/team-matches">
-          <div className="bg-[#1A2C3D] hover:bg-[#24384D] text-white p-2 rounded mr-4 cursor-pointer">
-            ← Back
-          </div>
-        </Link>
+        <button 
+          onClick={() => window.location.href = '/team-matches'} 
+          className="bg-[#1A2C3D] hover:bg-[#24384D] text-white p-2 rounded mr-4 cursor-pointer"
+        >
+          ← Back
+        </button>
         <h2 className="text-xl font-bold">Match Details</h2>
       </div>
       

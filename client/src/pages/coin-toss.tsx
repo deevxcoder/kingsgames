@@ -231,7 +231,7 @@ export default function CoinToss() {
               
               <div className="flex justify-between text-sm text-gray-300 mb-4">
                 <span>Potential Win:</span>
-                <span className="font-mono">${potentialWin.toFixed(2)}</span>
+                <span className="font-mono">₹{potentialWin.toLocaleString('en-IN')}</span>
               </div>
               
               <Button 
