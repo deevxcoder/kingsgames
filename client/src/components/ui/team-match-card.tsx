@@ -155,11 +155,11 @@ export function TeamMatchCard({
   if (linkToDetails) {
     return (
       <Link href={`/team-match/${id}`}>
-        <a className="block h-full">
+        <div className="block h-full">
           <Card className={cn(cardClasses, "cursor-pointer")}>
             {cardContent}
           </Card>
-        </a>
+        </div>
       </Link>
     );
   }
