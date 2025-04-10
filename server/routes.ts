@@ -1,535 +1,565 @@
-import type { Express, Request, Response } from "express";
+import express, { type Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer } from "ws";
+import WebSocket from "ws";
 import { storage } from "./storage";
-import { WebSocketServer, WebSocket } from "ws";
 import { 
+  loginSchema, 
   insertUserSchema, 
-  insertMarketSchema, 
-  insertBetSchema,
-  insertCoinTossResultSchema
+  coinTossBetSchema, 
+  sattamatkaBetSchema,
+  declareResultSchema,
+  insertMarketSchema,
+  insertGameTypeSchema
 } from "@shared/schema";
 import session from "express-session";
-import MemoryStore from "memorystore";
-import passport from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
+import { z } from "zod";
+import { nanoid } from "nanoid";
+import crypto from "crypto";
 
-// Create a session store
-const SessionStore = MemoryStore(session);
+// Helper for validating request body
+const validateBody = <T>(schema: z.ZodType<T>) => {
+  return (req: Request, res: Response, next: Function) => {
+    try {
+      req.body = schema.parse(req.body);
+      next();
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      return res.status(400).json({ error: "Invalid request body" });
+    }
+  };
+};
+
+// Helper to ensure user is authenticated
+const requireAuth = (req: Request, res: Response, next: Function) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+  next();
+};
+
+// Helper to ensure user is admin
+const requireAdmin = async (req: Request, res: Response, next: Function) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+  
+  const user = await storage.getUser(req.session.userId);
+  if (!user || !user.isAdmin) {
+    return res.status(403).json({ error: "Not authorized" });
+  }
+  
+  next();
+};
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
-  // Set up WebSocket server
+  // Setup WebSocket server for real-time updates
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
-  // Set up session middleware
+  // Setup session middleware
   app.use(
     session({
-      secret: "betwise-secret-key",
+      secret: process.env.SESSION_SECRET || "betx-secret-key",
       resave: false,
       saveUninitialized: false,
-      store: new SessionStore({
-        checkPeriod: 86400000 // prune expired entries every 24h
-      }),
-      cookie: {
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      },
+      cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }, // 1 day
+      name: "betx.sid",
     })
   );
-  
-  // Set up passport for authentication
-  app.use(passport.initialize());
-  app.use(passport.session());
-  
-  passport.use(
-    new LocalStrategy(async (username, password, done) => {
-      try {
-        const user = await storage.getUserByUsername(username);
-        if (!user) {
-          return done(null, false, { message: "Incorrect username" });
-        }
-        if (user.password !== password) {
-          return done(null, false, { message: "Incorrect password" });
-        }
-        return done(null, user);
-      } catch (err) {
-        return done(err);
-      }
-    })
-  );
-  
-  passport.serializeUser((user: any, done) => {
-    done(null, user.id);
-  });
-  
-  passport.deserializeUser(async (id: number, done) => {
-    try {
-      const user = await storage.getUser(id);
-      done(null, user);
-    } catch (err) {
-      done(err);
-    }
-  });
-  
-  // Broadcast updates to all connected clients
-  function broadcastUpdate(type: string, data: any) {
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify({ type, data }));
-      }
-    });
-  }
-  
-  // WebSocket connection handler
-  wss.on('connection', (ws) => {
-    console.log('Client connected to WebSocket');
-    
-    ws.on('message', async (message) => {
-      try {
-        const data = JSON.parse(message.toString());
-        console.log('Received message:', data);
-        
-        // Handle different message types if needed
-        if (data.type === 'ping') {
-          ws.send(JSON.stringify({ type: 'pong' }));
-        }
-      } catch (error) {
-        console.error('Error processing WebSocket message:', error);
-      }
-    });
-    
-    ws.on('close', () => {
-      console.log('Client disconnected from WebSocket');
-    });
-  });
-  
-  // Authentication routes
-  app.post("/api/auth/register", async (req, res) => {
-    try {
-      const userData = insertUserSchema.parse(req.body);
-      const existingUser = await storage.getUserByUsername(userData.username);
+
+  // Authentication Routes
+  app.post(
+    "/api/login", 
+    validateBody(loginSchema), 
+    async (req, res) => {
+      const { username, password } = req.body;
       
-      if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
+      const user = await storage.getUserByUsername(username);
+      if (!user || user.password !== password) {
+        return res.status(401).json({ error: "Invalid credentials" });
       }
       
-      const user = await storage.createUser(userData);
-      return res.status(201).json({ 
-        id: user.id, 
+      req.session.userId = user.id;
+      
+      return res.json({
+        id: user.id,
         username: user.username,
-        balance: user.balance,
-        isAdmin: user.isAdmin
+        isAdmin: user.isAdmin,
+        walletBalance: user.walletBalance
       });
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
     }
-  });
-  
-  app.post("/api/auth/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+  );
+
+  app.post(
+    "/api/register", 
+    validateBody(insertUserSchema), 
+    async (req, res) => {
+      const { username, password } = req.body;
+      
+      // Check if username is already taken
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ error: "Username already taken" });
+      }
+      
+      const user = await storage.createUser({
+        username,
+        password,
+        isAdmin: false,
+      });
+      
+      req.session.userId = user.id;
+      
+      return res.json({
+        id: user.id,
+        username: user.username,
+        isAdmin: user.isAdmin,
+        walletBalance: user.walletBalance
+      });
+    }
+  );
+
+  app.post("/api/logout", (req, res) => {
+    req.session.destroy((err) => {
       if (err) {
-        return next(err);
+        return res.status(500).json({ error: "Failed to logout" });
       }
-      if (!user) {
-        return res.status(401).json({ message: info.message });
-      }
-      req.logIn(user, (err) => {
-        if (err) {
-          return next(err);
-        }
-        return res.json({ 
-          id: user.id, 
-          username: user.username,
-          balance: user.balance,
-          isAdmin: user.isAdmin
-        });
-      });
-    })(req, res, next);
+      res.clearCookie("betx.sid");
+      return res.json({ message: "Logged out successfully" });
+    });
   });
-  
-  app.get("/api/auth/me", (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
+
+  app.get("/api/me", async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
     }
-    const user = req.user as any;
-    return res.json({ 
-      id: user.id, 
+    
+    const user = await storage.getUser(req.session.userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
+    return res.json({
+      id: user.id,
       username: user.username,
-      balance: user.balance,
-      isAdmin: user.isAdmin
+      isAdmin: user.isAdmin,
+      walletBalance: user.walletBalance
     });
   });
-  
-  app.post("/api/auth/logout", (req, res) => {
-    req.logout(() => {
-      res.json({ success: true });
-    });
+
+  // Wallet Routes
+  app.get("/api/wallet", requireAuth, async (req, res) => {
+    const user = await storage.getUser(req.session.userId!);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
+    return res.json({ balance: user.walletBalance });
   });
-  
-  // Middleware to check if user is authenticated
-  function isAuthenticated(req: Request, res: Response, next: any) {
-    if (req.isAuthenticated()) {
-      return next();
-    }
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-  
-  // Middleware to check if user is admin
-  function isAdmin(req: Request, res: Response, next: any) {
-    if (req.isAuthenticated() && (req.user as any).isAdmin) {
-      return next();
-    }
-    return res.status(403).json({ message: "Forbidden" });
-  }
-  
-  // Wallet routes
-  app.post("/api/wallet/deposit", isAuthenticated, async (req, res) => {
-    try {
-      const user = req.user as any;
-      const { amount } = req.body;
-      
-      if (!amount || amount <= 0) {
-        return res.status(400).json({ message: "Invalid amount" });
-      }
-      
-      const updatedUser = await storage.updateUserBalance(user.id, user.balance + amount);
-      
-      if (!updatedUser) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      // Create transaction record
-      await storage.createTransaction({
-        userId: user.id,
-        amount: amount,
-        type: "deposit",
-        description: "Deposit to wallet",
-        betId: null
-      });
-      
-      return res.json({ balance: updatedUser.balance });
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
-  });
-  
-  app.post("/api/wallet/withdraw", isAuthenticated, async (req, res) => {
-    try {
-      const user = req.user as any;
-      const { amount } = req.body;
-      
-      if (!amount || amount <= 0) {
-        return res.status(400).json({ message: "Invalid amount" });
-      }
-      
-      if (user.balance < amount) {
-        return res.status(400).json({ message: "Insufficient balance" });
-      }
-      
-      const updatedUser = await storage.updateUserBalance(user.id, user.balance - amount);
-      
-      if (!updatedUser) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      // Create transaction record
-      await storage.createTransaction({
-        userId: user.id,
-        amount: -amount,
-        type: "withdraw",
-        description: "Withdraw from wallet",
-        betId: null
-      });
-      
-      return res.json({ balance: updatedUser.balance });
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
-  });
-  
-  app.get("/api/wallet/transactions", isAuthenticated, async (req, res) => {
-    try {
-      const user = req.user as any;
-      const transactions = await storage.getUserTransactions(user.id);
-      return res.json(transactions);
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
-  });
-  
-  // Market routes
-  app.get("/api/markets", async (req, res) => {
-    try {
-      const markets = await storage.getAllMarkets();
-      return res.json(markets);
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
-  });
-  
-  app.get("/api/markets/:id", async (req, res) => {
-    try {
-      const marketId = parseInt(req.params.id);
-      const market = await storage.getMarket(marketId);
-      
-      if (!market) {
-        return res.status(404).json({ message: "Market not found" });
-      }
-      
-      return res.json(market);
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
-  });
-  
-  app.post("/api/markets", isAdmin, async (req, res) => {
-    try {
-      const user = req.user as any;
-      const marketData = insertMarketSchema.parse({
-        ...req.body,
-        createdBy: user.id
-      });
-      
-      const market = await storage.createMarket(marketData);
-      
-      // Add game types to the market
-      const { gameTypes } = req.body;
-      if (Array.isArray(gameTypes)) {
-        for (const gameTypeId of gameTypes) {
-          const gameType = await storage.getGameType(gameTypeId);
-          if (gameType) {
-            await storage.createMarketGameType({
-              marketId: market.id,
-              gameTypeId: gameType.id,
-              odds: gameType.odds
-            });
-          }
-        }
-      }
-      
-      broadcastUpdate('marketCreated', market);
-      return res.status(201).json(market);
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
-  });
-  
-  app.put("/api/markets/:id", isAdmin, async (req, res) => {
-    try {
-      const marketId = parseInt(req.params.id);
-      const market = await storage.getMarket(marketId);
-      
-      if (!market) {
-        return res.status(404).json({ message: "Market not found" });
-      }
-      
-      const updatedMarket = await storage.updateMarket(marketId, req.body);
-      broadcastUpdate('marketUpdated', updatedMarket);
-      return res.json(updatedMarket);
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
-  });
-  
-  app.post("/api/markets/:id/result", isAdmin, async (req, res) => {
-    try {
-      const marketId = parseInt(req.params.id);
-      const { result } = req.body;
-      
-      if (!result) {
-        return res.status(400).json({ message: "Result is required" });
-      }
-      
-      const market = await storage.getMarket(marketId);
-      
-      if (!market) {
-        return res.status(404).json({ message: "Market not found" });
-      }
-      
-      const updatedMarket = await storage.setMarketResult(marketId, result);
-      broadcastUpdate('marketResult', { marketId, result });
-      return res.json(updatedMarket);
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
-  });
-  
-  app.get("/api/markets/:id/game-types", async (req, res) => {
-    try {
-      const marketId = parseInt(req.params.id);
-      const marketGameTypes = await storage.getMarketGameTypes(marketId);
-      
-      // Get full game type information
-      const result = [];
-      for (const mgt of marketGameTypes) {
-        const gameType = await storage.getGameType(mgt.gameTypeId);
-        if (gameType) {
-          result.push({
-            ...mgt,
-            gameType
-          });
-        }
-      }
-      
-      return res.json(result);
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
-  });
-  
-  // Game type routes
-  app.get("/api/game-types", async (req, res) => {
-    try {
-      const gameTypes = await storage.getAllGameTypes();
-      return res.json(gameTypes);
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
-  });
-  
-  // Bet routes
-  app.post("/api/bets", isAuthenticated, async (req, res) => {
-    try {
-      const user = req.user as any;
-      const betData = insertBetSchema.parse({
-        ...req.body,
-        userId: user.id
-      });
+
+  // Coin Toss Game Routes
+  app.post(
+    "/api/games/coin-toss", 
+    requireAuth, 
+    validateBody(coinTossBetSchema), 
+    async (req, res) => {
+      const { betAmount, selection } = req.body;
+      const userId = req.session.userId!;
       
       // Check if user has enough balance
-      if (user.balance < betData.amount) {
-        return res.status(400).json({ message: "Insufficient balance" });
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
       }
       
-      // Check if market is open
-      const market = await storage.getMarket(betData.marketId);
-      if (!market || !market.isOpen) {
-        return res.status(400).json({ message: "Market is closed" });
+      if (parseFloat(user.walletBalance.toString()) < betAmount) {
+        return res.status(400).json({ error: "Insufficient balance" });
       }
       
-      const bet = await storage.createBet(betData);
+      // Deduct bet amount from user balance
+      await storage.updateUserWallet(userId, -betAmount);
       
-      // Return updated user balance
-      const updatedUser = await storage.getUser(user.id);
-      
-      // Send WebSocket update
-      broadcastUpdate('newBet', { bet, userBalance: updatedUser?.balance });
-      
-      return res.status(201).json({ 
-        bet, 
-        balance: updatedUser?.balance 
+      // Create bet record
+      const bet = await storage.createBet({
+        userId,
+        marketId: 0, // Coin toss doesn't use markets
+        gameType: "coin-toss",
+        betAmount: betAmount.toString(),
+        selection,
+        odds: "2", // 2x payout for coin toss
       });
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
-  });
-  
-  app.get("/api/bets", isAuthenticated, async (req, res) => {
-    try {
-      const user = req.user as any;
-      const bets = await storage.getUserBets(user.id);
       
-      // Enrich bets with market and game type information
-      const enrichedBets = [];
-      for (const bet of bets) {
-        const market = await storage.getMarket(bet.marketId);
-        const gameType = await storage.getGameType(bet.gameTypeId);
+      // Determine result (random for coin toss)
+      const result = Math.random() < 0.5 ? "heads" : "tails";
+      const won = selection === result;
+      
+      // Calculate winnings
+      const winAmount = won ? betAmount * 2 : 0;
+      
+      // Update bet status
+      await storage.updateBetStatus(
+        bet.id, 
+        result, 
+        won ? "won" : "lost", 
+        winAmount
+      );
+      
+      // If user won, add winnings to balance
+      if (won) {
+        await storage.updateUserWallet(userId, winAmount);
+      }
+      
+      // Get updated user for current balance
+      const updatedUser = await storage.getUser(userId);
+      
+      // Broadcast to all connected clients
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'coin-toss-result',
+            data: {
+              betId: bet.id,
+              userId,
+              result,
+              won,
+              winAmount,
+              selection
+            }
+          }));
+        }
+      });
+      
+      return res.json({
+        result,
+        won,
+        winAmount,
+        newBalance: updatedUser?.walletBalance
+      });
+    }
+  );
+
+  // Sattamatka Game Routes
+  app.get("/api/markets", async (req, res) => {
+    const markets = await storage.getMarkets();
+    return res.json(markets);
+  });
+
+  app.get("/api/markets/:id/game-types", async (req, res) => {
+    const marketId = parseInt(req.params.id);
+    const gameTypes = await storage.getGameTypes(marketId);
+    return res.json(gameTypes);
+  });
+
+  app.post(
+    "/api/games/sattamatka", 
+    requireAuth, 
+    validateBody(sattamatkaBetSchema), 
+    async (req, res) => {
+      const { marketId, gameType, betAmount, selection } = req.body;
+      const userId = req.session.userId!;
+      
+      // Check if user has enough balance
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      if (parseFloat(user.walletBalance.toString()) < betAmount) {
+        return res.status(400).json({ error: "Insufficient balance" });
+      }
+      
+      // Check if market exists and is open
+      const market = await storage.getMarket(marketId);
+      if (!market) {
+        return res.status(404).json({ error: "Market not found" });
+      }
+      
+      if (!market.isOpen) {
+        return res.status(400).json({ error: "Market is closed" });
+      }
+      
+      // Get odds for the game type
+      const gameTypes = await storage.getGameTypes(marketId);
+      const gameTypeInfo = gameTypes.find(gt => gt.type === gameType);
+      
+      if (!gameTypeInfo) {
+        return res.status(404).json({ error: "Game type not found for this market" });
+      }
+      
+      let odds = gameTypeInfo.odds;
+      
+      // For cross game, odds depend on number of selected digits
+      if (gameType === "cross") {
+        const selectedDigits = selection.split(",").length;
         
-        if (market && gameType) {
-          enrichedBets.push({
-            ...bet,
-            market: { id: market.id, name: market.name },
-            gameType: { id: gameType.id, name: gameType.name }
-          });
+        if (selectedDigits === 2) {
+          odds = "45";
+        } else if (selectedDigits === 3) {
+          odds = "15";
+        } else if (selectedDigits === 4) {
+          odds = "7.5";
+        } else {
+          return res.status(400).json({ error: "Invalid selection for cross game" });
         }
       }
       
-      return res.json(enrichedBets);
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
-  });
-  
-  // Coin Toss routes
-  app.post("/api/coin-toss", isAuthenticated, async (req, res) => {
-    try {
-      const user = req.user as any;
-      const { amount, selection } = req.body;
+      // Deduct bet amount from user balance
+      await storage.updateUserWallet(userId, -betAmount);
       
-      if (!amount || amount <= 0) {
-        return res.status(400).json({ message: "Invalid amount" });
-      }
-      
-      if (selection !== "heads" && selection !== "tails") {
-        return res.status(400).json({ message: "Invalid selection" });
-      }
-      
-      if (user.balance < amount) {
-        return res.status(400).json({ message: "Insufficient balance" });
-      }
-      
-      // Determine result
-      const result = Math.random() > 0.5 ? "heads" : "tails";
-      
-      // Create result record
-      await storage.createCoinTossResult({ result });
-      
-      // Determine win/loss
-      const won = selection === result;
-      const winAmount = won ? amount * 2 : 0;
-      
-      // Update user balance
-      const newBalance = user.balance - amount + winAmount;
-      const updatedUser = await storage.updateUserBalance(user.id, newBalance);
-      
-      // Create transaction record
-      await storage.createTransaction({
-        userId: user.id,
-        amount: -amount,
-        type: "bet",
-        description: `Coin Toss bet on ${selection}`,
-        betId: null
+      // Create bet record
+      const bet = await storage.createBet({
+        userId,
+        marketId,
+        gameType,
+        betAmount: betAmount.toString(),
+        selection,
+        odds,
       });
       
-      if (won) {
-        await storage.createTransaction({
-          userId: user.id,
-          amount: winAmount,
-          type: "win",
-          description: `Win from Coin Toss`,
-          betId: null
-        });
+      // Get updated user for current balance
+      const updatedUser = await storage.getUser(userId);
+      
+      // Broadcast to all connected clients
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'sattamatka-bet',
+            data: {
+              betId: bet.id,
+              userId,
+              marketId,
+              gameType,
+              selection
+            }
+          }));
+        }
+      });
+      
+      return res.json({
+        bet: {
+          id: bet.id,
+          gameType,
+          betAmount,
+          selection,
+          odds,
+          status: "pending"
+        },
+        newBalance: updatedUser?.walletBalance
+      });
+    }
+  );
+
+  // Admin Routes
+  app.post(
+    "/api/admin/markets", 
+    requireAdmin, 
+    validateBody(insertMarketSchema), 
+    async (req, res) => {
+      const market = await storage.createMarket(req.body);
+      
+      // Broadcast to all connected clients
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'market-created',
+            data: market
+          }));
+        }
+      });
+      
+      return res.json(market);
+    }
+  );
+
+  app.put(
+    "/api/admin/markets/:id", 
+    requireAdmin, 
+    async (req, res) => {
+      const marketId = parseInt(req.params.id);
+      const market = await storage.updateMarket(marketId, req.body);
+      
+      if (!market) {
+        return res.status(404).json({ error: "Market not found" });
       }
       
-      // Send WebSocket update
-      broadcastUpdate('coinTossResult', { 
-        result, 
-        won, 
-        amount, 
-        selection, 
-        winAmount, 
-        userBalance: updatedUser?.balance 
+      // Broadcast to all connected clients
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'market-updated',
+            data: market
+          }));
+        }
+      });
+      
+      return res.json(market);
+    }
+  );
+
+  app.post(
+    "/api/admin/game-types", 
+    requireAdmin, 
+    validateBody(insertGameTypeSchema), 
+    async (req, res) => {
+      const gameType = await storage.createGameType(req.body);
+      return res.json(gameType);
+    }
+  );
+
+  app.post(
+    "/api/admin/declare-result", 
+    requireAdmin, 
+    validateBody(declareResultSchema), 
+    async (req, res) => {
+      const { marketId, result } = req.body;
+      
+      // Update market with result
+      const market = await storage.setMarketResult(marketId, result);
+      
+      if (!market) {
+        return res.status(404).json({ error: "Market not found" });
+      }
+      
+      // Get all pending bets for this market
+      const allBets = await Promise.all(
+        Array.from({ length: storage.betId }, (_, id) => id + 1)
+          .map(id => storage.betsMap.get(id))
+          .filter(bet => bet && bet.marketId === marketId && bet.status === "pending")
+      );
+      
+      // Process each bet
+      for (const bet of allBets) {
+        if (!bet) continue;
+        
+        let won = false;
+        let winAmount = 0;
+        
+        // Check if bet won based on game type
+        switch (bet.gameType) {
+          case "jodi":
+            // Direct match
+            won = bet.selection === result;
+            break;
+          case "odd-even":
+            // Check if result is odd or even
+            const resultNum = parseInt(result);
+            const isOdd = resultNum % 2 === 1;
+            won = (bet.selection === "odd" && isOdd) || (bet.selection === "even" && !isOdd);
+            break;
+          case "hurf":
+            // Check left or right or both positions
+            const positions = bet.selection.split(":");
+            if (positions.length === 2) {
+              const [position, digit] = positions;
+              if (position === "left") {
+                won = result[0] === digit;
+              } else if (position === "right") {
+                won = result[1] === digit;
+              }
+            } else if (positions.length === 4) {
+              // Both positions selected
+              const [leftPos, leftDigit, rightPos, rightDigit] = positions;
+              const leftMatch = result[0] === leftDigit;
+              const rightMatch = result[1] === rightDigit;
+              
+              if (leftMatch && rightMatch) {
+                // Double match, use higher odds
+                won = true;
+                winAmount = parseFloat(bet.betAmount) * parseFloat(bet.doubleMatchOdds || "0");
+              } else if (leftMatch || rightMatch) {
+                // Single match
+                won = true;
+                winAmount = parseFloat(bet.betAmount) * parseFloat(bet.odds);
+              }
+            }
+            break;
+          case "cross":
+            // Check if any permutation matches
+            const digits = bet.selection.split(",");
+            const permutations = generatePermutations(digits);
+            won = permutations.includes(result);
+            break;
+        }
+        
+        // If winAmount not calculated yet
+        if (won && winAmount === 0) {
+          winAmount = parseFloat(bet.betAmount) * parseFloat(bet.odds);
+        }
+        
+        // Update bet status
+        await storage.updateBetStatus(
+          bet.id, 
+          result, 
+          won ? "won" : "lost", 
+          winAmount
+        );
+        
+        // If user won, add winnings to balance
+        if (won) {
+          await storage.updateUserWallet(bet.userId, winAmount);
+        }
+      }
+      
+      // Broadcast to all connected clients
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'market-result',
+            data: {
+              marketId,
+              result,
+              time: market.lastResultTime
+            }
+          }));
+        }
       });
       
       return res.json({ 
-        result, 
-        won, 
-        winAmount, 
-        balance: updatedUser?.balance 
+        message: "Result declared successfully",
+        market
       });
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
     }
+  );
+
+  // Bet History Route
+  app.get("/api/bets", requireAuth, async (req, res) => {
+    const userId = req.session.userId!;
+    const bets = await storage.getBets(userId);
+    return res.json(bets);
   });
-  
-  app.get("/api/coin-toss/history", async (req, res) => {
-    try {
-      const results = await storage.getRecentCoinTossResults(10);
-      return res.json(results);
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
+
+  // WebSocket connection handler
+  wss.on('connection', (ws) => {
+    // Send initial connection message
+    ws.send(JSON.stringify({ type: 'connected', message: 'Connected to BetX WebSocket server' }));
+    
+    ws.on('message', (message) => {
+      console.log('Received message:', message.toString());
+    });
   });
-  
+
   return httpServer;
+}
+
+// Helper function to generate permutations for cross game
+function generatePermutations(digits: string[]): string[] {
+  if (digits.length <= 1) return digits;
+  
+  const result: string[] = [];
+  
+  for (let i = 0; i < digits.length; i++) {
+    const current = digits[i];
+    const remaining = [...digits.slice(0, i), ...digits.slice(i + 1)];
+    const perms = generatePermutations(remaining);
+    
+    for (let perm of perms) {
+      result.push(current + perm);
+    }
+  }
+  
+  return result;
 }
