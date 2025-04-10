@@ -552,6 +552,219 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
+  // Team Match Routes
+  app.get("/api/team-matches", async (req, res) => {
+    const matches = await storage.getTeamMatches();
+    return res.json(matches);
+  });
+
+  app.get("/api/team-matches/:id", async (req, res) => {
+    const matchId = parseInt(req.params.id);
+    const match = await storage.getTeamMatch(matchId);
+    
+    if (!match) {
+      return res.status(404).json({ error: "Match not found" });
+    }
+    
+    return res.json(match);
+  });
+
+  app.post(
+    "/api/admin/team-matches", 
+    requireAdmin, 
+    validateBody(insertTeamMatchSchema), 
+    async (req, res) => {
+      const match = await storage.createTeamMatch(req.body);
+      
+      // Broadcast to all connected clients
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'team-match-created',
+            data: match
+          }));
+        }
+      });
+      
+      return res.json(match);
+    }
+  );
+
+  app.put(
+    "/api/admin/team-matches/:id", 
+    requireAdmin, 
+    async (req, res) => {
+      const matchId = parseInt(req.params.id);
+      const match = await storage.updateTeamMatch(matchId, req.body);
+      
+      if (!match) {
+        return res.status(404).json({ error: "Match not found" });
+      }
+      
+      // Broadcast to all connected clients
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'team-match-updated',
+            data: match
+          }));
+        }
+      });
+      
+      return res.json(match);
+    }
+  );
+
+  app.post(
+    "/api/admin/declare-match-result", 
+    requireAdmin, 
+    validateBody(declareMatchResultSchema), 
+    async (req, res) => {
+      const { matchId, result } = req.body;
+      
+      // Update match with result
+      const match = await storage.setTeamMatchResult(matchId, result);
+      
+      if (!match) {
+        return res.status(404).json({ error: "Match not found" });
+      }
+      
+      // Get all pending bets for this match
+      const allBets = Array.from(
+        await storage.getBets(0) // Temporary solution to get all bets
+      ).filter(bet => bet.matchId === matchId && bet.status === "pending");
+      
+      // Process each bet
+      for (const bet of allBets) {
+        let won = false;
+        let winAmount = 0;
+        
+        // Determine if bet won
+        if (bet.selection === result) {
+          won = true;
+          // Calculate winnings based on odds
+          const odds = result === "teamA" ? match.oddsTeamA : match.oddsTeamB;
+          winAmount = parseFloat(bet.betAmount) * parseFloat(odds);
+        }
+        
+        // Update bet status
+        await storage.updateBetStatus(
+          bet.id, 
+          result, 
+          won ? "won" : "lost", 
+          winAmount
+        );
+        
+        // If user won, add winnings to balance
+        if (won) {
+          await storage.updateUserWallet(bet.userId, winAmount);
+        }
+      }
+      
+      // Broadcast to all connected clients
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'match-result',
+            data: {
+              matchId,
+              result,
+              teamA: match.teamA,
+              teamB: match.teamB,
+              winningTeam: result === "teamA" ? match.teamA : match.teamB
+            }
+          }));
+        }
+      });
+      
+      return res.json({ 
+        message: "Match result declared successfully",
+        match
+      });
+    }
+  );
+
+  app.post(
+    "/api/games/team-match", 
+    requireAuth, 
+    validateBody(teamMatchBetSchema), 
+    async (req, res) => {
+      const { matchId, betAmount, selection } = req.body;
+      const userId = req.session.userId!;
+      
+      // Check if user has enough balance
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      if (parseFloat(user.walletBalance.toString()) < betAmount) {
+        return res.status(400).json({ error: "Insufficient balance" });
+      }
+      
+      // Check if match exists and is open
+      const match = await storage.getTeamMatch(matchId);
+      if (!match) {
+        return res.status(404).json({ error: "Match not found" });
+      }
+      
+      if (!match.isOpen) {
+        return res.status(400).json({ error: "Match is closed for betting" });
+      }
+      
+      // Determine odds based on selected team
+      const odds = selection === "teamA" ? match.oddsTeamA : match.oddsTeamB;
+      
+      // Deduct bet amount from user balance
+      await storage.updateUserWallet(userId, -betAmount);
+      
+      // Create bet record
+      const bet = await storage.createBet({
+        userId,
+        matchId,
+        gameType: "team-match",
+        betAmount: betAmount.toString(),
+        selection,
+        odds,
+      });
+      
+      // Get updated user for current balance
+      const updatedUser = await storage.getUser(userId);
+      
+      // Broadcast to all connected clients
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'team-match-bet',
+            data: {
+              betId: bet.id,
+              userId,
+              matchId,
+              teamA: match.teamA,
+              teamB: match.teamB,
+              selectedTeam: selection === "teamA" ? match.teamA : match.teamB
+            }
+          }));
+        }
+      });
+      
+      return res.json({
+        bet: {
+          id: bet.id,
+          gameType: "team-match",
+          betAmount,
+          selection,
+          odds,
+          status: "pending",
+          teamA: match.teamA,
+          teamB: match.teamB,
+          selectedTeam: selection === "teamA" ? match.teamA : match.teamB
+        },
+        newBalance: updatedUser?.walletBalance
+      });
+    }
+  );
+
   // Bet History Route
   app.get("/api/bets", requireAuth, async (req, res) => {
     const userId = req.session.userId!;
