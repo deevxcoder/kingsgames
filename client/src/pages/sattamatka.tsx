@@ -554,7 +554,7 @@ export default function Sattamatka() {
                       )}
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-300">Potential Win:</span>
-                        <span className="font-mono">${potentialWin.toFixed(2)}</span>
+                        <span className="font-mono">₹{potentialWin.toLocaleString('en-IN')}</span>
                       </div>
                     </div>
                     
