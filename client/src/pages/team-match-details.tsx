@@ -96,18 +96,15 @@ export default function TeamMatchDetails() {
   
   if (isLoading || !match) {
     return (
-      <Layout>
-        <div className="container mx-auto py-6">
-          <div className="text-center py-12">
-            <p>Loading match details...</p>
-          </div>
+      <div className="container mx-auto py-6">
+        <div className="text-center py-12">
+          <p>Loading match details...</p>
         </div>
-      </Layout>
+      </div>
     );
   }
   
   return (
-    <Layout>
       <div className="container mx-auto py-6">
         {/* Header with Back Button */}
         <div className="flex items-center mb-6">
@@ -287,6 +284,5 @@ export default function TeamMatchDetails() {
           </Card>
         </div>
       </div>
-    </Layout>
   );
 }
