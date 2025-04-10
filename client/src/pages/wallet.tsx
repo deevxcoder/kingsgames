@@ -44,7 +44,7 @@ export default function Wallet() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col items-center">
-              <div className="text-3xl font-mono font-bold mb-4">${parseFloat(balance).toFixed(2)}</div>
+              <div className="text-3xl font-mono font-bold mb-4">₹{parseFloat(balance).toLocaleString('en-IN')}</div>
               <Button
                 className="w-full bg-[#3EA6FF] hover:bg-[#4DB8FF] mb-2"
                 onClick={refreshBalance}
@@ -75,7 +75,7 @@ export default function Wallet() {
                     }`}
                     onClick={() => setDepositAmount(amount)}
                   >
-                    ${amount}
+                    ₹{amount}
                   </button>
                 ))}
               </div>
@@ -142,10 +142,10 @@ export default function Wallet() {
                       <td className="py-3 px-4 font-mono">
                         {bet.status === "won" ? (
                           <>
-                            <span className="text-[#00C853]">+${parseFloat(bet.winAmount).toFixed(2)}</span>
+                            <span className="text-[#00C853]">+₹{parseFloat(bet.winAmount).toLocaleString('en-IN')}</span>
                           </>
                         ) : (
-                          <span className="text-[#FF3B58]">-${parseFloat(bet.betAmount).toFixed(2)}</span>
+                          <span className="text-[#FF3B58]">-₹{parseFloat(bet.betAmount).toLocaleString('en-IN')}</span>
                         )}
                       </td>
                       <td className="py-3 px-4">Bet</td>
