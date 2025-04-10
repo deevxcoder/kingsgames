@@ -211,7 +211,7 @@ const CoinTossGame: React.FC = () => {
                   className="w-full bg-primary border border-primary-lighter rounded-lg py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-accent"
                   disabled={isFlipping}
                 />
-                <span className="absolute right-4 top-3 text-textSecondary">$</span>
+                <span className="absolute right-4 top-3 text-textSecondary">₹</span>
               </div>
               <div className="grid grid-cols-4 gap-2">
                 <Button
@@ -219,28 +219,28 @@ const CoinTossGame: React.FC = () => {
                   onClick={() => handleSetBetAmount(5)}
                   disabled={isFlipping}
                 >
-                  $5
+                  ₹5
                 </Button>
                 <Button
                   className="bet-button py-2 rounded bg-primary border border-primary-lighter text-white hover:border-accent"
                   onClick={() => handleSetBetAmount(10)}
                   disabled={isFlipping}
                 >
-                  $10
+                  ₹10
                 </Button>
                 <Button
                   className="bet-button py-2 rounded bg-primary border border-primary-lighter text-white hover:border-accent"
                   onClick={() => handleSetBetAmount(25)}
                   disabled={isFlipping}
                 >
-                  $25
+                  ₹25
                 </Button>
                 <Button
                   className="bet-button py-2 rounded bg-primary border border-primary-lighter text-white hover:border-accent"
                   onClick={() => handleSetBetAmount(50)}
                   disabled={isFlipping}
                 >
-                  $50
+                  ₹50
                 </Button>
               </div>
             </div>
@@ -249,7 +249,7 @@ const CoinTossGame: React.FC = () => {
           <div className="flex justify-between items-center mb-4">
             <div>
               <p className="text-textSecondary">Potential Win</p>
-              <p className="text-accent text-xl font-medium">${potentialWin.toFixed(2)}</p>
+              <p className="text-accent text-xl font-medium">₹{potentialWin.toLocaleString('en-IN')}</p>
             </div>
             <Button
               className="bet-button px-10 py-3 rounded-lg bg-accent text-white font-medium text-lg hover:bg-accent-darker"
