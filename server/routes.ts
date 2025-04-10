@@ -474,11 +474,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get all pending bets for this market
-      const allBets = await Promise.all(
-        Array.from({ length: storage.betId }, (_, id) => id + 1)
-          .map(id => storage.betsMap.get(id))
-          .filter(bet => bet && bet.marketId === marketId && bet.status === "pending")
-      );
+      // Using the getBets method and then filtering for the current market
+      const allBets = (await storage.getBets(0))
+        .filter(bet => bet.marketId === marketId && bet.status === "pending");
       
       // Process each bet
       for (const bet of allBets) {
