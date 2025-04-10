@@ -90,7 +90,7 @@ export default function Sidebar() {
       
       <div className="mt-auto p-3 rounded-lg bg-[#0A1018]">
         <div className="text-sm text-gray-300 mb-1">Wallet Balance</div>
-        <div className="text-lg font-mono font-bold">${parseFloat(balance).toFixed(2)}</div>
+        <div className="text-lg font-mono font-bold">₹{parseFloat(balance).toLocaleString('en-IN')}</div>
         <button 
           className="mt-2 w-full bg-[#3EA6FF] hover:bg-[#4DB8FF] py-1.5 px-3 rounded text-sm"
           onClick={() => {}}
