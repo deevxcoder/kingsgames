@@ -112,9 +112,9 @@ export default function TeamMatchDetails() {
         {/* Header with Back Button */}
         <div className="flex items-center mb-6">
           <Link href="/team-matches">
-            <a className="bg-[#1A2C3D] hover:bg-[#24384D] text-white p-2 rounded mr-4">
+            <div className="bg-[#1A2C3D] hover:bg-[#24384D] text-white p-2 rounded mr-4 cursor-pointer">
               ← Back
-            </a>
+            </div>
           </Link>
           <h2 className="text-xl font-bold">Match Details</h2>
         </div>
