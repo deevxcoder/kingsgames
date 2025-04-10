@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export function formatCurrency(amount: string | number): string {
   const numAmount = typeof amount === "string" ? parseFloat(amount) : amount;
-  return numAmount.toFixed(2);
+  return `₹${numAmount.toLocaleString('en-IN')}`;
 }
 
 export function formatDate(date: string | Date): string {
